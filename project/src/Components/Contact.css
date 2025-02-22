@@ -1,0 +1,91 @@
+.contact-container {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f8f9fa;
+    padding-bottom: 50px;
+  }
+  
+  .contact-banner {
+    background: url("contact-banner.jpg") center/cover no-repeat;
+    color: white;
+    text-align: center;
+    padding: 80px 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .contact-banner h1 {
+    font-size: 36px;
+    font-weight: bold;
+  }
+  
+  .contact-banner p {
+    font-size: 18px;
+  }
+  
+  .contact-content {
+    max-width: 1000px;
+    margin: auto;
+    padding: 40px 20px;
+  }
+  
+  .contact-info {
+    background: white;
+    padding: 20px;
+    margin: 20px 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .contact-info h2 {
+    color: #f5a623;
+  }
+  
+  .contact-info p {
+    font-size: 16px;
+    color: #333;
+    line-height: 1.6;
+  }
+  
+  .map-container {
+    margin: 20px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .contact-form {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .contact-form h2 {
+    color: #f5a623;
+  }
+  
+  .contact-form input,
+  .contact-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  
+  
+  /* Responsive */
+  @media screen and (max-width: 768px) {
+    .contact-banner {
+      padding: 50px 20px;
+    }
+  
+    .contact-banner h1 {
+      font-size: 28px;
+    }
+  
+    .contact-banner p {
+      font-size: 16px;
+    }
+  }
+  

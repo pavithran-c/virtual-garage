@@ -1,59 +1,58 @@
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
+
+// Log environment variables (sanitized)
+console.log('Environment variables loaded:', {
+  MONGODB_URI: process.env.MONGODB_URI ? 'Set' : 'Not Set',
+  JWT_SECRET: process.env.JWT_SECRET ? 'Set' : 'Not Set',
+  PORT: process.env.PORT
+});
 
 // MongoDB Connection
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("MongoDB Connected"))
-  .catch((err) => console.log(err));
+const connectWithRetry = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      // Remove any SSL-related options as they're causing issues
+    });
+    console.log('MongoDB connected successfully');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    console.log('Retrying connection in 5 seconds...');
+    setTimeout(connectWithRetry, 5000);
+  }
+};
 
-// Booking Schema
-const bookingSchema = new mongoose.Schema({
-  name: String,
-  phone: String,
-  email: String,
-  service: String,
-  date: String,
-  time: String,
-  message: String,
-  status: { type: String, default: "Pending" },
+// Initialize connection
+connectWithRetry();
+
+// Routes
+app.use('/api/auth', authRoutes);
+
+// Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
-const Booking = mongoose.model("Booking", bookingSchema);
-
-// API Endpoint to Create a Booking
-app.post("/api/bookings", async (req, res) => {
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
   try {
-    const { name, phone, email, service, date, time, message } = req.body;
-    const newBooking = new Booking({ name, phone, email, service, date, time, message });
-    await newBooking.save();
-    res.status(201).json({ message: "Booking Successful", booking: newBooking });
-  } catch (error) {
-    res.status(500).json({ error: "Booking failed" });
+    await mongoose.connection.close();
+    console.log('MongoDB connection closed through app termination');
+    process.exit(0);
+  } catch (err) {
+    console.error('Error closing MongoDB connection:', err);
+    process.exit(1);
   }
 });
-
-// API Endpoint to Get All Bookings
-app.get("/api/bookings", async (req, res) => {
-  try {
-    const bookings = await Booking.find();
-    res.status(200).json(bookings);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch bookings" });
-  }
-});
-
-// Start Server
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
