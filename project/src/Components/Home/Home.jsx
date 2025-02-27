@@ -129,13 +129,17 @@ const ImageBackground = () => {
         {/* Search Results */}
         <AnimatePresence>
           {searchResults.length > 0 && (
-            <motion.div
-              className="absolute top-[60%] left-0 right-0 mx-auto max-w-5xl px-6 py-8 bg-gradient-to-b from-[#12343b]/90 to-[#2d545e]/90 rounded-2xl shadow-2xl z-20 max-h-[50vh] overflow-y-auto" // Adjusted position and added scroll
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }}
-              transition={{ duration: 0.5 }}
-            >
+           <motion.div
+           className="absolute top-[67%] left-0 right-0 mx-auto max-w-5xl px-6 py-8 
+                      bg-gradient-to-b from-[#12343b]/90 to-[#2d545e]/90 rounded-2xl 
+                      shadow-2xl z-20 max-h-[50vh] overflow-y-auto 
+                      scrollbar-hide" // Custom utility class to hide scrollbar
+           initial={{ opacity: 0, y: 50 }}
+           animate={{ opacity: 1, y: 0 }}
+           exit={{ opacity: 0, y: 50 }}
+           transition={{ duration: 0.5 }}
+         >
+         
               <h3 className="text-2xl font-bold text-[#e1b382] mb-6 text-center">Search Results</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {searchResults.map((service, index) => (
@@ -196,7 +200,7 @@ const FeaturesSection = () => {
   return (
     <motion.section
       ref={ref}
-      className="container mx-auto px-6 py-24 bg-gradient-to-b from-[#c89666]/20 to-[#e1b382]/10"
+      className="mx-auto px-6 py-24 bg-gradient-to-b from-[#c89666]/20 to-[#e1b382]/10"
       initial={{ opacity: 0 }}
       animate={inView ? { opacity: 1 } : {}}
       transition={{ duration: 1 }}
@@ -467,13 +471,13 @@ const LocationSection = () => (
 // Live Chat
 const LiveChat = () => (
   <motion.div
-    className="fixed bottom-8 right-8 bg-gradient-to-r from-[#e1b382] to-[#c89666] rounded-full p-5 shadow-2xl hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] z-50"
+    className="fixed bottom-17 right-10 bg-gradient-to-r from-[#e1b382] to-[#c89666] rounded-full p-5 shadow-2xl hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] z-50"
     initial={{ scale: 0 }}
     animate={{ scale: 1 }}
     transition={{ duration: 0.6, delay: 1.5 }}
     whileHover={{ scale: 1.15, rotate: 10 }}
   >
-    <a href="#" className="text-[#12343b] text-3xl">
+    <a href="" className="text-[#12343b] text-3xl">
       <FaPhoneAlt />
     </a>
   </motion.div>

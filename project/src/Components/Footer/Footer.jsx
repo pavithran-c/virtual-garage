@@ -40,20 +40,19 @@ const Footer = () => {
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="container mx-auto px-4 sm:px-6 lg:px-8"
+        className=" mx-auto px-4 sm:px-6 lg:px-8"
       >
         <motion.button 
           onClick={scrollToTop}
-          className="absolute right-4 bottom-4 sm:right-8 sm:bottom-8 bg-[#12343b] p-3 rounded-full shadow-lg"
+          className="absolute right-4 bottom-4 sm:right-5 sm:bottom-8 bg-[#12343b] p-3 rounded-full shadow-lg hover:bg-[#2d545e] transition-colors"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           variants={itemVariants}
         >
-          <FaArrowUp className="text-[#e1b382]" />
+          <FaArrowUp className="text-[#e1b382] text-xl" />
         </motion.button>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
-
           {/* Company Info */}
           <motion.div variants={itemVariants} className="space-y-4">
             <motion.h3 
@@ -90,11 +89,11 @@ const Footer = () => {
             <h3 className="text-2xl font-bold text-[#2d545e]">Quick Links</h3>
             <ul className="space-y-2">
               {[
-                { name: 'Home', path: '/' },
+                { name: 'Home', path: '/home' },
                 { name: 'About Us', path: '/about' },
                 { name: 'Testimonials', path: '/testimonials' },
                 { name: 'Contact', path: '/contact' }
-              ].map((link, index) => (
+              ].map((link) => (
                 <motion.li key={link.name} variants={itemVariants}>
                   <a href={link.path} className="text-[#12343b] hover:text-[#2d545e] transition-colors duration-300">
                     {link.name}
@@ -123,10 +122,9 @@ const Footer = () => {
                   rel="noopener noreferrer"
                   variants={socialIconVariants}
                   whileHover="hover"
-                  className="bg-[#12343b] p-3 rounded-full"
-                  style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}
+                  className="bg-[#12343b] p-3 rounded-full text-[#e1b382] hover:text-white transition-colors"
                 >
-                  <Icon className="text-xl md:text-2xl hover:text-[${color}] transition-colors duration-300" />
+                  <Icon className="text-xl md:text-2xl" style={{ color }} />
                 </motion.a>
               ))}
             </div>
@@ -137,14 +135,14 @@ const Footer = () => {
                 type="email"
                 placeholder="Enter your email"
                 className="w-full px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg 
-                           focus:outline-none focus:ring-2 focus:ring-[#2d545e] 
-                           text-[#12343b] transition-all duration-300 placeholder-[#2d545e]"
+                          focus:outline-none focus:ring-2 focus:ring-[#2d545e] 
+                          text-[#12343b] placeholder-[#2d545e]/70 transition-all duration-300"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="absolute right-2 top-2 px-4 py-1 bg-[#2d545e] rounded-lg 
-                           transition-all duration-300 text-white font-semibold shadow-lg hover:shadow-[#2d545e]/50"
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1 bg-[#2d545e] rounded-lg 
+                          text-white font-semibold shadow-lg hover:bg-[#12343b] transition-all duration-300"
               >
                 Subscribe
               </motion.button>

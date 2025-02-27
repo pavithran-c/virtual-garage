@@ -204,7 +204,7 @@ const ServicesSection = () => {
   return (
     <motion.section
       ref={ref}
-      className="container mx-auto px-6 py-24 bg-gradient-to-b from-gray-100 to-white"
+      className=" mx-auto px-6 py-24 bg-gradient-to-b from-gray-100 to-white"
       initial={{ opacity: 0 }}
       animate={inView ? { opacity: 1 } : {}}
       transition={{ duration: 1 }}
@@ -318,7 +318,7 @@ const LiveServiceTracker = () => {
   return (
     <motion.section
       ref={ref}
-      className="container mx-auto px-6 py-24 bg-gradient-to-b from-white to-gray-100"
+      className="mx-auto px-6 py-24 bg-gradient-to-b from-white to-gray-100"
       initial={{ opacity: 0 }}
       animate={inView ? { opacity: 1 } : {}}
       transition={{ duration: 1 }}
@@ -589,7 +589,7 @@ const TestimonialsSection = () => {
       <motion.h2 className="text-5xl font-extrabold text-[#2d545e] text-center mb-20 tracking-wider" initial={{ opacity: 0, y: -60 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.9, delay: 0.2 }}>
         Our <span className="text-[#e1b382] bg-clip-text bg-gradient-to-r from-[#e1b382] to-[#c89666]">Valued Clients</span>
       </motion.h2>
-      <div className="container mx-auto flex flex-col md:flex-row gap-12">
+      <div className="mx-auto flex flex-col md:flex-row gap-12">
         <motion.div className="md:w-2/3 grid grid-cols-1 md:grid-cols-2 gap-8" initial={{ opacity: 0, x: -60 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.9, delay: 0.4 }}>
           {comments.map((testimonial, index) => (
             <motion.div key={index} className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 relative overflow-hidden border border-[#e1b382]/20" initial={{ opacity: 0, y: 60 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7, delay: index * 0.15 }} whileHover={{ y: -10, scale: 1.02 }}>
@@ -623,7 +623,7 @@ const TestimonialsSection = () => {
 // Live Chat
 const LiveChat = () => (
   <motion.div
-    className="fixed bottom-8 right-8 bg-gradient-to-r from-[#e1b382] to-[#c89666] rounded-full p-5 shadow-2xl hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] z-50"
+    className="fixed bottom-17 right-8 bg-gradient-to-r from-[#e1b382] to-[#c89666] rounded-full p-5 shadow-2xl hover:shadow-[0_10px_30px_rgba(0,0,0,0.2)] z-50"
     initial={{ scale: 0 }}
     animate={{ scale: 1 }}
     transition={{ duration: 0.6, delay: 1.5 }}
