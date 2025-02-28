@@ -35,7 +35,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-[#e1b382] text-[#12343b] py-16 relative">
+    <footer className="mx-auto bg-[#e1b382] text-[#12343b] py-16 relative">
       <motion.div 
         initial="hidden"
         animate="visible"

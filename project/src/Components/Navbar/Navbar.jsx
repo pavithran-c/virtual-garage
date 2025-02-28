@@ -1,28 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  FaShoppingCart,
-  FaEnvelope,
-  FaHome,
-  FaBars,
-  FaTimes,
-  FaUser,
-  FaWrench,
-  FaTags,
-  FaStore,
-} from "react-icons/fa";
+import { FaBars, FaTimes } from "react-icons/fa";
+import { AuthContext } from "../../context/AuthContext";
+import Logout from "../Logout/logout";
 
 const Navbar = () => {
+  const { user, logout } = useContext(AuthContext); // Get user and logout function
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -30,30 +21,26 @@ const Navbar = () => {
   useEffect(() => {
     window.history.pushState(null, null, window.location.pathname);
     const handlePopState = (event) => {
-      const isLoggedIn = localStorage.getItem("token");
-      if (!isLoggedIn) {
+      if (!user) {
         event.preventDefault();
         window.history.pushState(null, null, "/");
         navigate("/");
       }
     };
-
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [navigate]);
+  }, [navigate, user]);
 
   const navLinks = [
-    { to: "/home", icon: "🏠", text: "Home" },
-    { to: "/services", icon: "🔧", text: "Services" },
-    { to: "/offers", icon: "🏷️", text: "Offers" },
-    { to: "/shop", icon: "🛍️", text: "Shop" },
-    { to: "/contact", icon: "✉️", text: "Contact" },
+    { to: "/home", text: "Home" },
+    { to: "/services", text: "Services" },
+    { to: "/offers", text: "Offers" },
+    { to: "/shop", text: "Shop" },
+    { to: "/contact", text: "Contact" },
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    window.history.replaceState(null, null, "/");
+    logout(); // Call logout function from AuthContext
     navigate("/", { replace: true });
   };
 
@@ -61,9 +48,7 @@ const Navbar = () => {
     <>
       <motion.header
         className={`fixed top-0 left-0 right-0 h-20 z-50 transition-all duration-300 ${
-          isScrolled 
-            ? "bg-[#12343b]/80 backdrop-blur-sm" 
-            : "bg-[#12343b]/60 backdrop-blur-sm"
+          isScrolled ? "bg-[#12343b]/80 backdrop-blur-sm" : "bg-[#12343b]/60 backdrop-blur-sm"
         }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -80,20 +65,20 @@ const Navbar = () => {
                 key={link.to}
                 to={link.to}
                 className={`px-4 py-2 rounded-md transition-colors duration-200 ${
-                  location.pathname === link.to
-                    ? "bg-[#2d545e]/80 text-[#e1b382]"
-                    : "text-[#e1b382] hover:bg-[#2d545e]/60"
+                  location.pathname === link.to ? "bg-[#2d545e]/80 text-[#e1b382]" : "text-[#e1b382] hover:bg-[#2d545e]/60"
                 }`}
               >
                 {link.text}
               </Link>
             ))}
-            <button
-              onClick={handleLogout}
-              className="bg-[#2d545e]/80 text-[#e1b382] px-6 py-2 rounded-md hover:bg-[#12343b]/80 transition-colors"
-            >
-              Logout
-            </button>
+            {user && (
+              <button
+                onClick={handleLogout}
+                className="bg-[#2d545e]/80 text-[#e1b382] px-6 py-2 rounded-md hover:bg-[#12343b]/80 transition-colors"
+              >
+                Logout
+              </button>
+            )}
           </nav>
 
           <button
@@ -122,21 +107,21 @@ const Navbar = () => {
                   key={link.to}
                   to={link.to}
                   className={`px-4 py-3 rounded-md transition-colors duration-200 ${
-                    location.pathname === link.to
-                      ? "bg-[#2d545e]/80 text-[#e1b382]"
-                      : "text-[#e1b382] hover:bg-[#2d545e]/60"
+                    location.pathname === link.to ? "bg-[#2d545e]/80 text-[#e1b382]" : "text-[#e1b382] hover:bg-[#2d545e]/60"
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {link.text}
                 </Link>
               ))}
-              <button
-                onClick={handleLogout}
-                className="mt-2 bg-[#2d545e]/80 text-[#e1b382] px-4 py-3 rounded-md hover:bg-[#12343b]/80 transition-colors w-full text-left"
-              >
-                Logout
-              </button>
+              {user && (
+                <button
+                  onClick={handleLogout}
+                  className="mt-2 bg-[#2d545e]/80 text-[#e1b382] px-4 py-3 rounded-md hover:bg-[#12343b]/80 transition-colors w-full text-left"
+                >
+                  Logout
+                </button>
+              )}
             </nav>
           </motion.div>
         )}
