@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
+import axios from "axios";
 
 export const AuthContext = createContext();
 
@@ -9,21 +10,59 @@ const AuthProvider = ({ children }) => {
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
+  // Set up axios defaults
+  useEffect(() => {
+    if (user && user.token) {
+      // Set default Authorization header for all requests
+      axios.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
+      console.log('Set Authorization header with token');
+    } else {
+      // Clear the header when no user is logged in
+      delete axios.defaults.headers.common['Authorization'];
+      console.log('Cleared Authorization header');
+    }
+  }, [user]);
+
   const login = (userData) => {
+    console.log('Login data received:', userData);
+    
+    // Ensure we have a token
+    if (!userData.token) {
+      console.error('No token received during login');
+    }
+    
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData)); // Store user in localStorage
+    
+    // Set the Authorization header when logging in
+    if (userData && userData.token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${userData.token}`;
+      console.log('Set Authorization header on login');
+    }
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user"); // Clear on logout
+    
+    // Clear the Authorization header when logging out
+    delete axios.defaults.headers.common['Authorization'];
+    console.log('Cleared Authorization header on logout');
   };
 
   useEffect(() => {
     // Sync user state with localStorage on mount
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const userData = JSON.parse(storedUser);
+      console.log('Loaded user from localStorage:', userData);
+      setUser(userData);
+      
+      // Set the Authorization header on initial load
+      if (userData && userData.token) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${userData.token}`;
+        console.log('Set Authorization header on initial load');
+      }
     }
   }, []);
 
@@ -33,7 +72,5 @@ const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-
-
 
 export default AuthProvider;

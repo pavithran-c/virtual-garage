@@ -13,40 +13,61 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-// ✅ Google OAuth Login/Register
+// Google OAuth Login/Register
 router.post('/google', async (req, res) => {
   try {
     const { email, name, picture, sub: googleId } = req.body;
+
+    if (!email || !googleId) {
+      return res.status(400).json({ message: 'Missing required fields: email or googleId' });
+    }
 
     let user = await User.findOne({ $or: [{ email }, { googleId }] });
 
     if (user) {
       if (!user.googleId) {
         user.googleId = googleId;
-        user.picture = picture;
+        user.picture = picture || user.picture;
         await user.save();
       }
     } else {
-      user = new User({ username: name, email, googleId, picture, authType: 'google' });
+      user = new User({
+        username: name || `user_${googleId.slice(0, 8)}`, // Fallback username
+        email,
+        googleId,
+        picture: picture || null,
+        authType: 'google',
+      });
       await user.save();
     }
 
     const token = generateToken(user._id);
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 });
-    
+    if (!token) throw new Error('Token generation failed');
+
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     res.status(200).json({
-      user: { id: user._id, username: user.username, email: user.email, picture: user.picture }
+      user: { id: user._id, username: user.username, email: user.email, picture: user.picture },
+      token
     });
   } catch (error) {
-    console.error('Google auth error:', error);
+    console.error('Google auth error:', error.message, error.stack);
     res.status(500).json({ message: 'Server error during Google authentication' });
   }
 });
 
-// ✅ Register User
+// Register User
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
 
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ message: 'User already exists' });
@@ -57,39 +78,59 @@ router.post('/register', async (req, res) => {
     await user.save();
 
     const token = generateToken(user._id);
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
 
-    res.status(201).json({ user: { id: user._id, username: user.username, email: user.email } });
+    res.status(201).json({ 
+      user: { id: user._id, username: user.username, email: user.email },
+      token
+    });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ message: 'Server error during registration' });
   }
 });
 
-// ✅ Login User with Rate Limit
+// Login User with Rate Limit
 router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Missing email or password' });
+    }
+
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
-    if (user.authType === 'google') return res.status(400).json({ message: 'Use Google Sign-In instead' });
+    if (user.authType === 'google') {
+      return res.status(400).json({ message: 'Use Google Sign-In instead' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
     const token = generateToken(user._id);
-    res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 24 * 60 * 60 * 1000 });
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
 
-    res.json({ user: { id: user._id, username: user.username, email: user.email, picture: user.picture } });
+    res.json({ 
+      user: { id: user._id, username: user.username, email: user.email, picture: user.picture },
+      token
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error during login' });
   }
 });
 
-// ✅ Logout User
+// Logout User
 router.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ message: 'Logged out successfully' });

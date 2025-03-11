@@ -8,6 +8,7 @@ import Footer from "./Components/Footer/Footer";
 import Navbar from "./Components/Navbar/Navbar";
 import AuthProvider, { AuthContext } from "./context/AuthContext"; // Import AuthProvider
 import Contact from "./Components/Contact";
+import Dashboard from "./Components/Dashboard/Dashboard";
 // Get client ID from environment variable
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -59,6 +60,13 @@ const App = () => {
             <ProtectedRoute>
               <Navbar />
               <Contact />
+              <Footer />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Navbar />
+              <Dashboard />
               <Footer />
             </ProtectedRoute>
           } />
