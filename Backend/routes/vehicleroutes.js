@@ -40,4 +40,16 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+
+// DELETE /api/vehicles/:id - Delete a vehicle by ID
+router.delete("/:id", async (req, res) => {
+  try {
+    const vehicle = await Vehicle.findByIdAndDelete(req.params.id);
+    if (!vehicle) return res.status(404).json({ message: "Vehicle not found" });
+
+    res.json({ message: "Vehicle deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
 module.exports = router;

@@ -3,8 +3,10 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 const authRoutes = require('./routes/authRoutes');
-const vehicleRoutes = require('./routes/vehicleroutes'); // Add this
+const vehicleRoutes = require('./routes/vehicleroutes');
+const appointmentRoutes = require('./routes/appointments');
 
 const app = express();
 
@@ -39,9 +41,31 @@ const connectWithRetry = async () => {
 
 connectWithRetry();
 
+// Authentication Middleware
+const authMiddleware = (req, res, next) => {
+  const token = req.cookies.token; // Assuming token is stored in a cookie named 'token'
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided, please log in' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = {
+      _id: decoded._id, // Assuming your JWT payload has '_id'
+      username: decoded.username, // Assuming your JWT payload has 'username'
+    };
+    console.log('Authenticated user:', req.user); // Debug log
+    next();
+  } catch (error) {
+    console.error('JWT verification error:', error);
+    res.status(401).json({ message: 'Invalid or expired token, please log in again' });
+  }
+};
+
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/vehicles', vehicleRoutes); // Add this
+app.use('/api/vehicles', authMiddleware, vehicleRoutes); // Protect vehicle routes too
+app.use('/api/appointments', authMiddleware, appointmentRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;
