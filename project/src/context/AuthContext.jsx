@@ -15,7 +15,6 @@ const AuthProvider = ({ children }) => {
     if (user && user.token) {
       // Set default Authorization header for all requests
       axios.defaults.headers.common['Authorization'] = `Bearer ${user.token}`;
-      console.log('Set Authorization header with token');
     } else {
       // Clear the header when no user is logged in
       delete axios.defaults.headers.common['Authorization'];
@@ -37,7 +36,6 @@ const AuthProvider = ({ children }) => {
     // Set the Authorization header when logging in
     if (userData && userData.token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${userData.token}`;
-      console.log('Set Authorization header on login');
     }
   };
 
@@ -47,7 +45,6 @@ const AuthProvider = ({ children }) => {
     
     // Clear the Authorization header when logging out
     delete axios.defaults.headers.common['Authorization'];
-    console.log('Cleared Authorization header on logout');
   };
 
   useEffect(() => {
@@ -55,13 +52,11 @@ const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       const userData = JSON.parse(storedUser);
-      console.log('Loaded user from localStorage:', userData);
       setUser(userData);
       
       // Set the Authorization header on initial load
       if (userData && userData.token) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${userData.token}`;
-        console.log('Set Authorization header on initial load');
       }
     }
   }, []);

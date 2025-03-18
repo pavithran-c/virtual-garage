@@ -11,6 +11,7 @@ const Dashboard = () => {
   const [vehicleForm, setVehicleForm] = useState({ name: "", manufacturer: "", number: "" });
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [error, setError] = useState("");
+  const [vehicleNumberError, setVehicleNumberError] = useState(""); // New state for vehicle number validation error
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [vehicleToDelete, setVehicleToDelete] = useState(null);
@@ -19,13 +20,12 @@ const Dashboard = () => {
   const [isAppointmentFormOpen, setIsAppointmentFormOpen] = useState(false);
   const [appointmentForm, setAppointmentForm] = useState({ service: "", date: "", time: "", number: "" });
   const [editingAppointment, setEditingAppointment] = useState(null);
+  const [appointmentToDelete, setAppointmentToDelete] = useState(null);
+  const [showAppointmentDeleteModal, setShowAppointmentDeleteModal] = useState(false);
   const MAX_APPOINTMENTS_PER_DAY = 8;
 
-  // Debug user state
-  useEffect(() => {
-    console.log('Current user state:', user);
-    console.log('Authorization header:', axios.defaults.headers.common['Authorization']);
-  }, [user]);
+  // Regex for vehicle number: Two letters, space, two digits, space, one letter, space, four digits
+  const vehicleNumberRegex = /^[A-Z]{2}\s\d{2}\s[A-Z]\s\d{4}$/;
 
   // Fetch vehicles on mount
   useEffect(() => {
@@ -34,7 +34,6 @@ const Dashboard = () => {
         console.log('No user found, skipping vehicle fetch');
         return;
       }
-      
       setLoading(true);
       try {
         const response = await axios.get(`${API_URL}/vehicles`, { withCredentials: true });
@@ -47,10 +46,7 @@ const Dashboard = () => {
         setLoading(false);
       }
     };
-    
-    if (user) {
-      fetchVehicles();
-    }
+    if (user) fetchVehicles();
   }, [user]);
 
   // Fetch appointments on mount
@@ -60,7 +56,6 @@ const Dashboard = () => {
         console.log('No user found, skipping appointment fetch');
         return;
       }
-      
       try {
         const response = await axios.get(`${API_URL}/appointments`, { withCredentials: true });
         setAppointments(response.data);
@@ -70,32 +65,49 @@ const Dashboard = () => {
         setError(error.response?.data?.message || "Failed to fetch appointments");
       }
     };
-    
-    if (user) {
-      fetchAppointments();
-    }
+    if (user) fetchAppointments();
   }, [user]);
 
   const handleVehicleChange = (e) => {
-    setVehicleForm({ ...vehicleForm, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setVehicleForm({ ...vehicleForm, [name]: value });
+
+    // Validate vehicle number on change
+    if (name === "number") {
+      if (!vehicleNumberRegex.test(value)) {
+        setVehicleNumberError("Vehicle number must be in the format: TN 88 Y 0666 (e.g., two letters, two digits, one letter, four digits, with spaces)");
+      } else {
+        setVehicleNumberError("");
+      }
+    }
   };
 
   const handleVehicleSubmit = async (e) => {
     e.preventDefault();
-    if (vehicleForm.name && vehicleForm.manufacturer && vehicleForm.number) {
-      setLoading(true);
-      try {
-        const response = await axios.post(`${API_URL}/vehicles`, vehicleForm, { withCredentials: true });
-        setVehicles([...vehicles, response.data]);
-        setVehicleForm({ name: "", manufacturer: "", number: "" });
-        setIsFormOpen(false);
-        setError("");
-      } catch (error) {
-        console.error('Error adding vehicle:', error.response?.data || error);
-        setError(error.response?.data?.message || "Failed to add vehicle");
-      } finally {
-        setLoading(false);
-      }
+    if (!vehicleForm.name || !vehicleForm.manufacturer || !vehicleForm.number) {
+      setError("All fields are required");
+      return;
+    }
+
+    // Validate vehicle number before submission
+    if (!vehicleNumberRegex.test(vehicleForm.number)) {
+      setVehicleNumberError("Vehicle number must be in the format: TN 88 Y 0666");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API_URL}/vehicles`, vehicleForm, { withCredentials: true });
+      setVehicles([...vehicles, response.data]);
+      setVehicleForm({ name: "", manufacturer: "", number: "" });
+      setIsFormOpen(false);
+      setError("");
+      setVehicleNumberError("");
+    } catch (error) {
+      console.error('Error adding vehicle:', error.response?.data || error);
+      setError(error.response?.data?.message || "Failed to add vehicle");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -104,13 +116,12 @@ const Dashboard = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = async () => {
+  const confirmDeleteVehicle = async () => {
     if (!vehicleToDelete) {
       setShowDeleteModal(false);
       setError("No vehicle selected for deletion");
       return;
     }
-    
     try {
       await axios.delete(`${API_URL}/vehicles/${vehicleToDelete}`, { withCredentials: true });
       setVehicles(vehicles.filter(vehicle => vehicle._id !== vehicleToDelete));
@@ -124,7 +135,7 @@ const Dashboard = () => {
     }
   };
 
-  const cancelDelete = () => {
+  const cancelDeleteVehicle = () => {
     setShowDeleteModal(false);
     setVehicleToDelete(null);
   };
@@ -174,22 +185,40 @@ const Dashboard = () => {
     setIsAppointmentFormOpen(true);
   };
 
-  const handleDeleteAppointment = async (id) => {
+  const handleDeleteAppointment = (appointmentId) => {
+    setAppointmentToDelete(appointmentId);
+    setShowAppointmentDeleteModal(true);
+  };
+
+  const confirmDeleteAppointment = async () => {
+    if (!appointmentToDelete) {
+      setShowAppointmentDeleteModal(false);
+      setError("No appointment selected for deletion");
+      return;
+    }
     try {
-      await axios.delete(`${API_URL}/appointments/${id}`, { withCredentials: true });
-      setAppointments(appointments.filter((appt) => appt._id !== id));
+      await axios.delete(`${API_URL}/appointments/${appointmentToDelete}`, { withCredentials: true });
+      setAppointments(appointments.filter((appt) => appt._id !== appointmentToDelete));
+      setShowAppointmentDeleteModal(false);
+      setAppointmentToDelete(null);
       setError("");
     } catch (error) {
       console.error('Error deleting appointment:', error.response?.data || error);
       setError(error.response?.data?.message || "Failed to delete appointment");
+      setShowAppointmentDeleteModal(false);
     }
+  };
+
+  const cancelDeleteAppointment = () => {
+    setShowAppointmentDeleteModal(false);
+    setAppointmentToDelete(null);
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       {/* Welcome Section */}
       <div className="bg-[#12343b] text-white p-6 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold">Welcome, {user?.user?.username || "Guest"}!</h1>
+        <h1 className="text-3xl font-bold">Welcome, {user.user.username || "Guest"}!</h1>
         <p className="text-lg mt-2">Your virtual garage is ready for you.</p>
       </div>
 
@@ -307,17 +336,22 @@ const Dashboard = () => {
                 />
               </div>
               <div className="flex flex-col">
-                <label htmlFor="number" className="text-gray-700 font-medium">Vehicle Number (License Plate/VIN)</label>
+                <label htmlFor="number" className="text-gray-700 font-medium">Vehicle Number (License Plate)</label>
                 <input
                   type="text"
                   id="number"
                   name="number"
                   value={vehicleForm.number}
                   onChange={handleVehicleChange}
-                  placeholder="e.g., ABC123 or 1HGCM82633A004352"
-                  className="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., TN 88 Y 0666"
+                  className={`mt-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    vehicleNumberError ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   required
                 />
+                {vehicleNumberError && (
+                  <p className="text-red-500 text-sm mt-1">{vehicleNumberError}</p>
+                )}
               </div>
               <div className="flex justify-end space-x-2">
                 <button
@@ -330,6 +364,7 @@ const Dashboard = () => {
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+                  disabled={!!vehicleNumberError} // Disable submit if there's a validation error
                 >
                   Add Vehicle
                 </button>
@@ -339,7 +374,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Vehicle Delete Confirmation Modal */}
       {showDeleteModal && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
@@ -360,13 +395,13 @@ const Dashboard = () => {
             )}
             <div className="flex justify-end space-x-2">
               <button
-                onClick={cancelDelete}
+                onClick={cancelDeleteVehicle}
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
               >
                 Cancel
               </button>
               <button
-                onClick={confirmDelete}
+                onClick={confirmDeleteVehicle}
                 className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
               >
                 Delete
@@ -533,6 +568,44 @@ const Dashboard = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Appointment Delete Confirmation Modal */}
+      {showAppointmentDeleteModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+        >
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h3 className="text-xl font-semibold mb-4">Confirm Deletion</h3>
+            <p className="mb-4">
+              Are you sure you want to delete this appointment? This action cannot be undone.
+            </p>
+            {appointmentToDelete && appointments.find(a => a._id === appointmentToDelete) ? (
+              <p className="mb-4 text-gray-600">
+                Appointment: {appointments.find(a => a._id === appointmentToDelete).service} on{" "}
+                {appointments.find(a => a._id === appointmentToDelete).date} at{" "}
+                {appointments.find(a => a._id === appointmentToDelete).time}
+              </p>
+            ) : (
+              <p className="mb-4 text-gray-600">Appointment ID: {appointmentToDelete}</p>
+            )}
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={cancelDeleteAppointment}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteAppointment}
+                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

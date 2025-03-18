@@ -2,10 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const Appointment = require('../models/Appointment');
-
+const authMiddleware = require('../middleware/authMiddleware');
 const MAX_APPOINTMENTS_PER_DAY = 8;
 
-router.get('/', async (req, res) => {
+router.get('/',authMiddleware, async (req, res) => {
   try {
     console.log('Fetching appointments for user:', req.user.id);
     const appointments = await Appointment.find({ userId: req.user.id });
@@ -17,7 +17,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+
+
+router.post('/', authMiddleware, async (req, res) => {
   const { service, date, time, number } = req.body;
   console.log('POST /api/appointments request body:', req.body);
   console.log('User ID from token:', req.user.id);
@@ -34,7 +36,7 @@ router.post('/', async (req, res) => {
         message: `Maximum ${MAX_APPOINTMENTS_PER_DAY} appointments reached for ${date}`,
       });
     }
-
+    console.log(req.user.id);
     const newAppointment = new Appointment({
       userId: req.user.id,
       service,
@@ -56,5 +58,33 @@ router.post('/', async (req, res) => {
 });
 
 // PUT and DELETE routes remain unchanged but add similar logging if needed
+// DELETE /api/vehicles/:id - Delete a vehicle by ID
+router.delete("/:id", authMiddleware, async (req, res) => {  
+  try {
+    const appointment = await Appointment.findByIdAndDelete(req.params.id);
+    if (!appointment) return res.status(404).json({ message: "Appointment not found" });
+
+    res.json({ message: "Appointment deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+router.put("/:id", async (req, res) => {
+  try {
+    const updatedAppointment = await Appointment.findByIdAndUpdate(
+      req.params.id,  // ✅ Correctly reference `id`
+      req.body,       // ✅ Update data from request body
+      { new: true }   // ✅ Return the updated document
+    );
+    if (!updatedAppointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+    res.json(updatedAppointment);
+  } catch (error) {
+    console.error("PUT /api/appointments/:id error:", error);
+    res.status(500).json({ message: "Error updating appointment", error: error.message });
+  }
+});
 
 module.exports = router;
