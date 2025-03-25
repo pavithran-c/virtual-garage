@@ -3,10 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
-import Logout from "../Logout/logout";
 
 const Navbar = () => {
-  const { user, logout } = useContext(AuthContext); // Get user and logout function
+  const { user, logout } = useContext(AuthContext);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -35,21 +34,22 @@ const Navbar = () => {
     { to: "/home", text: "Home" },
     { to: "/services", text: "Services" },
     { to: "/dashboard", text: "Dashboard" },
-    { to: "/shop", text: "Shop" },
+    { to: "/live-track", text: "Live Track" },
+    { to: "/ai-recommender", text: "AI Recommender" },
+    { to: "/about", text: "About" },
+    { to: "/profile", text: "Profile" },
     { to: "/contact", text: "Contact" },
   ];
 
   const handleLogout = () => {
-    logout(); // Call logout function from AuthContext
+    logout();
     navigate("/", { replace: true });
   };
 
   return (
     <>
       <motion.header
-        className={`fixed top-0 left-0 right-0 h-20 z-50 transition-all duration-300 ${
-          isScrolled ? "bg-[#12343b]/80 backdrop-blur-sm" : "bg-[#12343b]/60 backdrop-blur-sm"
-        }`}
+        className={`fixed top-0 left-0 right-0 h-20 z-50 transition-all duration-300 bg-[#0d2a32]/80 backdrop-blur-sm`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -74,7 +74,7 @@ const Navbar = () => {
             {user && (
               <button
                 onClick={handleLogout}
-                className="bg-[#2d545e]/80 text-[#e1b382] px-6 py-2 rounded-md hover:bg-[#12343b]/80 transition-colors"
+                className="bg-[#2d545e]/80 text-[#e1b382] px-6 py-2 rounded-md hover:bg-[#0d2a32]/80 transition-colors"
               >
                 Logout
               </button>
@@ -95,7 +95,7 @@ const Navbar = () => {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            className="fixed top-20 left-0 right-0 z-40 bg-[#12343b]/90 backdrop-blur-sm shadow-lg md:hidden"
+            className="fixed top-20 left-0 right-0 z-40 bg-[#0d2a32]/80 backdrop-blur-sm shadow-lg md:hidden"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -117,7 +117,7 @@ const Navbar = () => {
               {user && (
                 <button
                   onClick={handleLogout}
-                  className="mt-2 bg-[#2d545e]/80 text-[#e1b382] px-4 py-3 rounded-md hover:bg-[#12343b]/80 transition-colors w-full text-left"
+                  className="mt-2 bg-[#2d545e]/80 text-[#e1b382] px-4 py-3 rounded-md hover:bg-[#0d2a32]/80 transition-colors w-full text-left"
                 >
                   Logout
                 </button>
@@ -126,7 +126,7 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       {/* Spacer */}
       <div className="h-20" />
     </>
