@@ -28,7 +28,7 @@ const App = () => {
     <GoogleOAuthProvider 
       clientId={clientId}
       onScriptLoadError={() => {
-        console.error('Google OAuth script failed to load');
+        console.error('Google OAuth script failed to load',clientId);
       }}
       onScriptLoadSuccess={() => {
         console.log('Google OAuth script loaded successfully');

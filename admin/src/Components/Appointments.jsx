@@ -8,7 +8,7 @@ const AdminPortal = () => {
       name: "John Doe",
       service: "Haircut",
       date: "2025-03-25",
-      status: "Pending", // Replaced 'accepted' with 'status'
+      accepted: false,
       changeRequested: false,
       changeReason: null,
       progress: null,
@@ -18,7 +18,7 @@ const AdminPortal = () => {
       name: "Jane Smith",
       service: "Massage",
       date: "2025-03-26",
-      status: "Pending",
+      accepted: false,
       changeRequested: false,
       changeReason: null,
       progress: null,
@@ -28,7 +28,7 @@ const AdminPortal = () => {
       name: "Alex Brown",
       service: "Manicure",
       date: "2025-03-27",
-      status: "Pending",
+      accepted: false,
       changeRequested: false,
       changeReason: null,
       progress: null,
@@ -48,8 +48,8 @@ const AdminPortal = () => {
         appointment.id === id
           ? {
               ...appointment,
-              status: "Accepted",
-              progress: { percentage: 0, note: "Service started" }, // Initialize to 0% on acceptance
+              accepted: true,
+              progress: appointment.progress || { percentage: 0, note: "Service started" }, // Initialize to 0% if no prior progress
             }
           : appointment
       )
@@ -77,11 +77,7 @@ const AdminPortal = () => {
     setAppointments(
       appointments.map((appointment) =>
         appointment.id === id
-          ? {
-              ...appointment,
-              progress: progressUpdate,
-              status: progressUpdate.percentage === 100 ? "Completed" : appointment.status,
-            }
+          ? { ...appointment, progress: progressUpdate }
           : appointment
       )
     );
@@ -121,7 +117,7 @@ const AdminPortal = () => {
                       <span className="font-medium text-gray-900">Date:</span>{" "}
                       {appointment.date}
                     </p>
-                    {appointment.changeRequested && appointment.status === "Pending" && (
+                    {appointment.changeRequested && !appointment.accepted && (
                       <p className="text-orange-600 text-sm sm:text-base mt-2 flex items-center">
                         <span className="font-medium">Status:</span>{" "}
                         <span className="ml-1 bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs sm:text-sm">
@@ -137,7 +133,7 @@ const AdminPortal = () => {
                         </span>
                       </p>
                     )}
-                    {appointment.status !== "Pending" && appointment.progress && (
+                    {appointment.accepted && appointment.progress && (
                       <div className="mt-2">
                         <p className="text-blue-600 text-sm sm:text-base flex items-center">
                           <span className="font-medium">Progress:</span>{" "}
@@ -149,19 +145,16 @@ const AdminPortal = () => {
                           <span className="font-medium">Note:</span>{" "}
                           {appointment.progress.note}
                         </p>
-                        {appointment.status !== "Completed" && (
-                          <ServiceProgressInput
-                            appointmentId={appointment.id}
-                            initialProgress={appointment.progress}
-                            onProgressUpdate={handleProgressUpdate}
-                          />
-                        )}
                       </div>
                     )}
                   </div>
+                  <ServiceProgressInput
+                    appointmentId={appointment.id}
+                    onProgressUpdate={handleProgressUpdate}
+                  />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                  {appointment.status === "Pending" && !appointment.changeRequested && (
+                  {!appointment.accepted && !appointment.changeRequested && (
                     <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                       <select
                         id={`reason-${appointment.id}`}
@@ -193,20 +186,14 @@ const AdminPortal = () => {
                   )}
                   <button
                     onClick={() => handleAccept(appointment.id)}
-                    disabled={appointment.status !== "Pending"}
+                    disabled={appointment.accepted}
                     className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium text-sm sm:text-base transition duration-300 shadow-sm ${
-                      appointment.status !== "Pending"
-                        ? appointment.status === "Completed"
-                          ? "bg-gray-600 text-white cursor-not-allowed opacity-60 hover:bg-gray-600"
-                          : "bg-green-600 text-white cursor-not-allowed opacity-60 hover:bg-green-600"
+                      appointment.accepted
+                        ? "bg-green-600 text-white cursor-not-allowed opacity-60 hover:bg-green-600"
                         : "bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     }`}
                   >
-                    {appointment.status === "Pending"
-                      ? "Accept"
-                      : appointment.status === "Accepted"
-                      ? "Accepted"
-                      : "Completed"}
+                    {appointment.accepted ? "Accepted" : "Accept"}
                   </button>
                 </div>
               </div>
