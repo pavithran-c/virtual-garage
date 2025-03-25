@@ -6,9 +6,14 @@ import HomePage from "./Components/Home/Home";
 import ServicesPage from "./Components/Services/Service";
 import Footer from "./Components/Footer/Footer";
 import Navbar from "./Components/Navbar/Navbar";
-import AuthProvider, { AuthContext } from "./context/AuthContext"; // Import AuthProvider
+import AuthProvider, { AuthContext } from "./context/AuthContext";
 import Contact from "./Components/Contact";
 import Dashboard from "./Components/Dashboard/Dashboard";
+import AIRecommender from "./Components/AIRecommender/AIRecommender"; // Updated path
+import LiveTrack from "./Components/LiveTrack/LiveTrack";             // Assumed similar structure
+import Profile from "./Components/Profile/Profile";                   // Assumed similar structure
+import About from "./Components/About/About";                         // Assumed similar structure
+
 // Get client ID from environment variable
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -25,7 +30,7 @@ const App = () => {
   }
 
   return (
-    <GoogleOAuthProvider 
+    <GoogleOAuthProvider
       clientId={clientId}
       onScriptLoadError={() => {
         console.error('Google OAuth script failed to load');
@@ -48,28 +53,76 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
-            <Route path="/services" element={
-              <ProtectedRoute>
-                <Navbar />
-                <ServicesPage />
-                <Footer />
-              </ProtectedRoute>
-            } />
-          
-          <Route path="/contact" element={
-            <ProtectedRoute>
-              <Navbar />
-              <Contact />
-              <Footer />
-            </ProtectedRoute>
-          } />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Navbar />
-              <Dashboard />
-              <Footer />
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/services"
+              element={
+                <ProtectedRoute>
+                  <Navbar />
+                  <ServicesPage />
+                  <Footer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/contact"
+              element={
+                <ProtectedRoute>
+                  <Navbar />
+                  <Contact />
+                  <Footer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Navbar />
+                  <Dashboard />
+                  <Footer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/live-track"
+              element={
+                <ProtectedRoute>
+                  <Navbar />
+                  <LiveTrack />
+                  <Footer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ai-recommender"
+              element={
+                <ProtectedRoute>
+                  <Navbar />
+                  <AIRecommender />
+                  <Footer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Navbar />
+                  <Profile />
+                  <Footer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/about"
+              element={
+                <ProtectedRoute>
+                  <Navbar />
+                  <About />
+                  <Footer />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </Router>
       </AuthProvider>
