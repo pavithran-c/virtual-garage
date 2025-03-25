@@ -1,7 +1,9 @@
 import React, { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import { FaCar, FaCalendarAlt, FaShoppingCart } from "react-icons/fa";
+import { FaCar, FaCalendarAlt, FaShoppingCart, FaSearch } from "react-icons/fa";
 import axios from "axios";
+import { allServices } from "../../data/services";
+import { useNavigate, useLocation } from "react-router-dom"; // Replace next/navigation
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -11,36 +13,42 @@ const Dashboard = () => {
   const [vehicleForm, setVehicleForm] = useState({ name: "", manufacturer: "", number: "" });
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [error, setError] = useState("");
-  const [vehicleNumberError, setVehicleNumberError] = useState(""); // New state for vehicle number validation error
+  const [vehicleNumberError, setVehicleNumberError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [vehicleToDelete, setVehicleToDelete] = useState(null);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const initialServices = queryParams.get("services")?.split(",").map(decodeURIComponent) || [];
   const [appointments, setAppointments] = useState([]);
-  const [isAppointmentFormOpen, setIsAppointmentFormOpen] = useState(false);
-  const [appointmentForm, setAppointmentForm] = useState({ service: "", date: "", time: "", number: "" });
+  const [isAppointmentFormOpen, setIsAppointmentFormOpen] = useState(!!initialServices.length);
+  const [appointmentForm, setAppointmentForm] = useState({
+    services: initialServices,
+    date: "",
+    time: "",
+    number: "",
+  });
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [appointmentToDelete, setAppointmentToDelete] = useState(null);
   const [showAppointmentDeleteModal, setShowAppointmentDeleteModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [customService, setCustomService] = useState("");
   const MAX_APPOINTMENTS_PER_DAY = 8;
 
-  // Regex for vehicle number: Two letters, space, two digits, space, one letter, space, four digits
   const vehicleNumberRegex = /^[A-Z]{2}\s\d{2}\s[A-Z]\s\d{4}$/;
 
-  // Fetch vehicles on mount
   useEffect(() => {
     const fetchVehicles = async () => {
-      if (!user) {
-        console.log('No user found, skipping vehicle fetch');
-        return;
-      }
+      if (!user) return;
       setLoading(true);
       try {
         const response = await axios.get(`${API_URL}/vehicles`, { withCredentials: true });
         setVehicles(response.data);
         setError("");
       } catch (error) {
-        console.error('Error fetching vehicles:', error.response || error);
+        console.error("Error fetching vehicles:", error.response || error);
         setError(error.response?.data?.message || "Failed to fetch vehicles");
       } finally {
         setLoading(false);
@@ -49,19 +57,15 @@ const Dashboard = () => {
     if (user) fetchVehicles();
   }, [user]);
 
-  // Fetch appointments on mount
   useEffect(() => {
     const fetchAppointments = async () => {
-      if (!user) {
-        console.log('No user found, skipping appointment fetch');
-        return;
-      }
+      if (!user) return;
       try {
         const response = await axios.get(`${API_URL}/appointments`, { withCredentials: true });
         setAppointments(response.data);
         setError("");
       } catch (error) {
-        console.error('Error fetching appointments:', error.response || error);
+        console.error("Error fetching appointments:", error.response || error);
         setError(error.response?.data?.message || "Failed to fetch appointments");
       }
     };
@@ -71,11 +75,9 @@ const Dashboard = () => {
   const handleVehicleChange = (e) => {
     const { name, value } = e.target;
     setVehicleForm({ ...vehicleForm, [name]: value });
-
-    // Validate vehicle number on change
     if (name === "number") {
       if (!vehicleNumberRegex.test(value)) {
-        setVehicleNumberError("Vehicle number must be in the format: TN 88 Y 0666 (e.g., two letters, two digits, one letter, four digits, with spaces)");
+        setVehicleNumberError("Vehicle number must be in the format: TN 88 Y 0666");
       } else {
         setVehicleNumberError("");
       }
@@ -88,13 +90,10 @@ const Dashboard = () => {
       setError("All fields are required");
       return;
     }
-
-    // Validate vehicle number before submission
     if (!vehicleNumberRegex.test(vehicleForm.number)) {
       setVehicleNumberError("Vehicle number must be in the format: TN 88 Y 0666");
       return;
     }
-
     setLoading(true);
     try {
       const response = await axios.post(`${API_URL}/vehicles`, vehicleForm, { withCredentials: true });
@@ -104,7 +103,7 @@ const Dashboard = () => {
       setError("");
       setVehicleNumberError("");
     } catch (error) {
-      console.error('Error adding vehicle:', error.response?.data || error);
+      console.error("Error adding vehicle:", error.response?.data || error);
       setError(error.response?.data?.message || "Failed to add vehicle");
     } finally {
       setLoading(false);
@@ -124,7 +123,7 @@ const Dashboard = () => {
     }
     try {
       await axios.delete(`${API_URL}/vehicles/${vehicleToDelete}`, { withCredentials: true });
-      setVehicles(vehicles.filter(vehicle => vehicle._id !== vehicleToDelete));
+      setVehicles(vehicles.filter((vehicle) => vehicle._id !== vehicleToDelete));
       setShowDeleteModal(false);
       setVehicleToDelete(null);
       setError("");
@@ -141,7 +140,39 @@ const Dashboard = () => {
   };
 
   const handleAppointmentChange = (e) => {
-    setAppointmentForm({ ...appointmentForm, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    if (name === "services") {
+      setAppointmentForm((prev) => {
+        const services = checked
+          ? [...prev.services, value]
+          : prev.services.filter((service) => service !== value);
+        return { ...prev, services };
+      });
+    } else {
+      setAppointmentForm({ ...appointmentForm, [name]: value });
+    }
+  };
+
+  const handleCustomServiceChange = (e) => {
+    setCustomService(e.target.value);
+  };
+
+  const addCustomService = () => {
+    const trimmedService = customService.trim();
+    if (trimmedService && !appointmentForm.services.includes(trimmedService)) {
+      setAppointmentForm((prev) => ({
+        ...prev,
+        services: [...prev.services, trimmedService],
+      }));
+      setCustomService("");
+    }
+  };
+
+  const handleCustomServiceKeyPress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addCustomService();
+    }
   };
 
   const getAppointmentsForDate = (date) => {
@@ -150,34 +181,41 @@ const Dashboard = () => {
 
   const handleAppointmentSubmit = async (e) => {
     e.preventDefault();
-    if (appointmentForm.service && appointmentForm.date && appointmentForm.time && appointmentForm.number) {
-      try {
-        const response = editingAppointment
-          ? await axios.put(`${API_URL}/appointments/${editingAppointment._id}`, appointmentForm, { withCredentials: true })
-          : await axios.post(`${API_URL}/appointments`, appointmentForm, { withCredentials: true });
+    if (appointmentForm.services.length === 0 || !appointmentForm.date || !appointmentForm.time || !appointmentForm.number) {
+      setError("All fields are required, including at least one service");
+      return;
+    }
+    try {
+      const response = editingAppointment
+        ? await axios.put(`${API_URL}/appointments/${editingAppointment._id}`, appointmentForm, {
+            withCredentials: true,
+          })
+        : await axios.post(`${API_URL}/appointments`, appointmentForm, { withCredentials: true });
 
-        if (editingAppointment) {
-          setAppointments(appointments.map((appt) =>
-            appt._id === editingAppointment._id ? response.data : appt
-          ));
-          setEditingAppointment(null);
-        } else {
-          setAppointments([...appointments, response.data]);
-        }
-        setAppointmentForm({ service: "", date: "", time: "", number: "" });
-        setIsAppointmentFormOpen(false);
-        setError("");
-      } catch (error) {
-        console.error('Error saving appointment:', error.response?.data || error);
-        setError(error.response?.data?.message || "Failed to save appointment");
+      if (editingAppointment) {
+        setAppointments(
+          appointments.map((appt) => (appt._id === editingAppointment._id ? response.data : appt))
+        );
+        setEditingAppointment(null);
+      } else {
+        setAppointments([...appointments, response.data]);
       }
+      setAppointmentForm({ services: [], date: "", time: "", number: "" });
+      setIsAppointmentFormOpen(false);
+      setError("");
+      setSearchTerm("");
+      setCustomService("");
+      navigate("/dashboard"); // Reset URL
+    } catch (error) {
+      console.error("Error saving appointment:", error.response?.data || error);
+      setError(error.response?.data?.message || "Failed to save appointment");
     }
   };
 
   const handleEditAppointment = (appointment) => {
     setEditingAppointment(appointment);
     setAppointmentForm({
-      service: appointment.service,
+      services: appointment.services || [appointment.service],
       date: appointment.date,
       time: appointment.time,
       number: appointment.number,
@@ -203,7 +241,7 @@ const Dashboard = () => {
       setAppointmentToDelete(null);
       setError("");
     } catch (error) {
-      console.error('Error deleting appointment:', error.response?.data || error);
+      console.error("Error deleting appointment:", error.response?.data || error);
       setError(error.response?.data?.message || "Failed to delete appointment");
       setShowAppointmentDeleteModal(false);
     }
@@ -214,22 +252,23 @@ const Dashboard = () => {
     setAppointmentToDelete(null);
   };
 
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const filteredServices = allServices.filter((service) =>
+    service.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      {/* Welcome Section */}
       <div className="bg-[#12343b] text-white p-6 rounded-lg shadow-md">
         <h1 className="text-3xl font-bold">Welcome, {user.user.username || "Guest"}!</h1>
         <p className="text-lg mt-2">Your virtual garage is ready for you.</p>
       </div>
-
-      {/* Error Display */}
       {error && (
-        <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
-          {error}
-        </div>
+        <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">{error}</div>
       )}
-
-      {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <div className="bg-white p-6 rounded-lg shadow-md flex items-center space-x-4">
           <FaCar className="text-blue-500 text-3xl" />
@@ -253,8 +292,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Vehicles Section */}
       <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">Your Vehicles</h3>
@@ -299,18 +336,15 @@ const Dashboard = () => {
           </table>
         )}
       </div>
-
-      {/* Vehicle Form Modal */}
       {isFormOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h3 className="text-xl font-semibold mb-4">Add a Vehicle</h3>
             <form onSubmit={handleVehicleSubmit} className="space-y-4">
               <div className="flex flex-col">
-                <label htmlFor="name" className="text-gray-700 font-medium">Vehicle Name</label>
+                <label htmlFor="name" className="text-gray-700 font-medium">
+                  Vehicle Name
+                </label>
                 <input
                   type="text"
                   id="name"
@@ -323,7 +357,9 @@ const Dashboard = () => {
                 />
               </div>
               <div className="flex flex-col">
-                <label htmlFor="manufacturer" className="text-gray-700 font-medium">Manufacturer</label>
+                <label htmlFor="manufacturer" className="text-gray-700 font-medium">
+                  Manufacturer
+                </label>
                 <input
                   type="text"
                   id="manufacturer"
@@ -336,7 +372,9 @@ const Dashboard = () => {
                 />
               </div>
               <div className="flex flex-col">
-                <label htmlFor="number" className="text-gray-700 font-medium">Vehicle Number (License Plate)</label>
+                <label htmlFor="number" className="text-gray-700 font-medium">
+                  Vehicle Number (License Plate)
+                </label>
                 <input
                   type="text"
                   id="number"
@@ -345,7 +383,7 @@ const Dashboard = () => {
                   onChange={handleVehicleChange}
                   placeholder="e.g., TN 88 Y 0666"
                   className={`mt-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    vehicleNumberError ? 'border-red-500' : 'border-gray-300'
+                    vehicleNumberError ? "border-red-500" : "border-gray-300"
                   }`}
                   required
                 />
@@ -364,7 +402,7 @@ const Dashboard = () => {
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-                  disabled={!!vehicleNumberError} // Disable submit if there's a validation error
+                  disabled={!!vehicleNumberError}
                 >
                   Add Vehicle
                 </button>
@@ -373,22 +411,15 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-
-      {/* Vehicle Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h3 className="text-xl font-semibold mb-4">Confirm Deletion</h3>
-            <p className="mb-4">
-              Are you sure you want to delete this vehicle? This action cannot be undone.
-            </p>
-            {vehicleToDelete && vehicles.find(v => v._id === vehicleToDelete) ? (
+            <p className="mb-4">Are you sure you want to delete this vehicle? This action cannot be undone.</p>
+            {vehicleToDelete && vehicles.find((v) => v._id === vehicleToDelete) ? (
               <p className="mb-4 text-gray-600">
-                Vehicle: {vehicles.find(v => v._id === vehicleToDelete).name} (
-                {vehicles.find(v => v._id === vehicleToDelete).manufacturer})
+                Vehicle: {vehicles.find((v) => v._id === vehicleToDelete).name} (
+                {vehicles.find((v) => v._id === vehicleToDelete).manufacturer})
               </p>
             ) : (
               <p className="mb-4 text-gray-600">Vehicle ID: {vehicleToDelete}</p>
@@ -410,16 +441,16 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-
-      {/* Upcoming Appointments */}
       <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">Upcoming Appointments</h3>
           <button
             onClick={() => {
               setEditingAppointment(null);
-              setAppointmentForm({ service: "", date: "", time: "", number: "" });
+              setAppointmentForm({ services: [], date: "", time: "", number: "" });
               setIsAppointmentFormOpen(true);
+              setSearchTerm("");
+              setCustomService("");
             }}
             className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
           >
@@ -432,7 +463,7 @@ const Dashboard = () => {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-200">
-                <th className="p-3 text-left">Service</th>
+                <th className="p-3 text-left">Services</th>
                 <th className="p-3 text-left">Date</th>
                 <th className="p-3 text-left">Time</th>
                 <th className="p-3 text-left">Vehicle Number</th>
@@ -442,7 +473,9 @@ const Dashboard = () => {
             <tbody>
               {appointments.map((appointment) => (
                 <tr key={appointment._id} className="border-b">
-                  <td className="p-3">{appointment.service}</td>
+                  <td className="p-3">
+                    {(appointment.services || [appointment.service]).join(", ")}
+                  </td>
                   <td className="p-3">{appointment.date}</td>
                   <td className="p-3">{appointment.time}</td>
                   <td className="p-3">{appointment.number}</td>
@@ -466,32 +499,99 @@ const Dashboard = () => {
           </table>
         )}
       </div>
-
-      {/* Appointment Form Modal */}
       {isAppointmentFormOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h3 className="text-xl font-semibold mb-4">
               {editingAppointment ? "Edit Appointment" : "Add Appointment"}
             </h3>
             <form onSubmit={handleAppointmentSubmit} className="space-y-4">
               <div className="flex flex-col">
-                <label htmlFor="service" className="text-gray-700 font-medium">
-                  Service
-                </label>
-                <input
-                  type="text"
-                  id="service"
-                  name="service"
-                  value={appointmentForm.service}
-                  onChange={handleAppointmentChange}
-                  placeholder="e.g., Oil Change"
-                  className="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+                <label className="text-gray-700 font-medium">Services</label>
+                <div className="relative mt-1">
+                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    placeholder="Search services..."
+                    className="w-full pl-10 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="mt-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-2 bg-gray-50">
+                  {filteredServices.length === 0 && !searchTerm ? (
+                    <p className="text-gray-500 text-sm">No services available</p>
+                  ) : filteredServices.length === 0 ? (
+                    <p className="text-gray-500 text-sm">No services found</p>
+                  ) : (
+                    filteredServices.map((service) => (
+                      <div
+                        key={service}
+                        className="flex items-center space-x-2 py-1 hover:bg-gray-100 rounded-md px-2"
+                      >
+                        <input
+                          type="checkbox"
+                          id={`service-${service}`}
+                          name="services"
+                          value={service}
+                          checked={appointmentForm.services.includes(service)}
+                          onChange={handleAppointmentChange}
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <label
+                          htmlFor={`service-${service}`}
+                          className="text-gray-700 text-sm cursor-pointer"
+                        >
+                          {service}
+                        </label>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="mt-2 flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={customService}
+                    onChange={handleCustomServiceChange}
+                    onKeyPress={handleCustomServiceKeyPress}
+                    placeholder="Add custom service..."
+                    className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={addCustomService}
+                    className="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
+                  >
+                    Add
+                  </button>
+                </div>
+                {appointmentForm.services.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {appointmentForm.services.map((service) => (
+                      <span
+                        key={service}
+                        className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                      >
+                        {service}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAppointmentForm((prev) => ({
+                              ...prev,
+                              services: prev.services.filter((s) => s !== service),
+                            }))
+                          }
+                          className="ml-1 text-blue-600 hover:text-blue-800 focus:outline-none"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {appointmentForm.services.length === 0 && (
+                  <p className="text-red-500 text-sm mt-1">Please select or add at least one service</p>
+                )}
               </div>
               <div className="flex flex-col">
                 <label htmlFor="date" className="text-gray-700 font-medium">
@@ -507,11 +607,13 @@ const Dashboard = () => {
                   className="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
-                {appointmentForm.date && getAppointmentsForDate(appointmentForm.date) >= MAX_APPOINTMENTS_PER_DAY && !editingAppointment && (
-                  <p className="text-red-500 text-sm mt-1">
-                    This date is fully booked (max {MAX_APPOINTMENTS_PER_DAY} appointments)
-                  </p>
-                )}
+                {appointmentForm.date &&
+                  getAppointmentsForDate(appointmentForm.date) >= MAX_APPOINTMENTS_PER_DAY &&
+                  !editingAppointment && (
+                    <p className="text-red-500 text-sm mt-1">
+                      This date is fully booked (max {MAX_APPOINTMENTS_PER_DAY} appointments)
+                    </p>
+                  )}
               </div>
               <div className="flex flex-col">
                 <label htmlFor="time" className="text-gray-700 font-medium">
@@ -571,23 +673,16 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-
-      {/* Appointment Delete Confirmation Modal */}
       {showAppointmentDeleteModal && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h3 className="text-xl font-semibold mb-4">Confirm Deletion</h3>
-            <p className="mb-4">
-              Are you sure you want to delete this appointment? This action cannot be undone.
-            </p>
-            {appointmentToDelete && appointments.find(a => a._id === appointmentToDelete) ? (
+            <p className="mb-4">Are you sure you want to delete this appointment? This action cannot be undone.</p>
+            {appointmentToDelete && appointments.find((a) => a._id === appointmentToDelete) ? (
               <p className="mb-4 text-gray-600">
-                Appointment: {appointments.find(a => a._id === appointmentToDelete).service} on{" "}
-                {appointments.find(a => a._id === appointmentToDelete).date} at{" "}
-                {appointments.find(a => a._id === appointmentToDelete).time}
+                Appointment: {(appointments.find((a) => a._id === appointmentToDelete).services || [appointments.find((a) => a._id === appointmentToDelete).service]).join(", ")} on{" "}
+                {appointments.find((a) => a._id === appointmentToDelete).date} at{" "}
+                {appointments.find((a) => a._id === appointmentToDelete).time}
               </p>
             ) : (
               <p className="mb-4 text-gray-600">Appointment ID: {appointmentToDelete}</p>
@@ -609,8 +704,6 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-
-      {/* Recent Orders */}
       <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-semibold mb-4">Recent Orders</h3>
         <table className="w-full border-collapse">

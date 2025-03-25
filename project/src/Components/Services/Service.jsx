@@ -1,5 +1,3 @@
-"use client";
-
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FaWrench, FaCar, FaTachometerAlt, FaBatteryHalf, FaOilCan, FaTools, FaWind, FaPaintRoller,
@@ -8,9 +6,9 @@ import {
 } from "react-icons/fa";
 import { useState } from "react";
 import { useInView } from "react-intersection-observer";
-import { services, allServices } from "../../data/services"; // Import shared services
+import { services, allServices } from "../../data/services";
+import { useNavigate } from "react-router-dom"; // Replace useRouter
 
-// Service Card Component (Main Categories)
 const ServiceCard = ({ icon, title, onClick }) => {
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.2 });
 
@@ -29,7 +27,6 @@ const ServiceCard = ({ icon, title, onClick }) => {
   );
 };
 
-// Sub-Service Card Component (No Icon)
 const SubServiceCard = ({ title, description, onClick }) => (
   <div
     className="bg-gradient-to-br from-white/90 to-gray-100/80 p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 border border-[#e1b382]/50 cursor-pointer"
@@ -40,7 +37,6 @@ const SubServiceCard = ({ title, description, onClick }) => (
   </div>
 );
 
-// Service Detail Modal
 const ServiceDetailModal = ({ service, onClose, onApply }) => (
   <motion.div
     className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
@@ -79,16 +75,16 @@ const ServiceDetailModal = ({ service, onClose, onApply }) => (
   </motion.div>
 );
 
-// Services Section with Categories and Search
 const ServicesSection = () => {
   const [ref, inView] = useInView({ triggerOnce: true, threshold: 0.1 });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
+  const navigate = useNavigate(); // Replace useRouter
 
   const mainCategories = Object.keys(services.categories).map(category => ({
     title: category,
-    icon: services.categories[category][0].icon, // Use the first service's icon for the category
+    icon: services.categories[category][0].icon,
   }));
 
   const filteredCategories = mainCategories.filter(category =>
@@ -96,7 +92,14 @@ const ServicesSection = () => {
   );
 
   const handleApply = (service) => {
-    alert(`Applying for ${service ? service.title : selectedCategory}! Redirecting to booking...`);
+    if (service) {
+      // Single service
+      navigate(`/dashboard?services=${encodeURIComponent(service.title)}`);
+    } else if (selectedCategory) {
+      // All services in category
+      const categoryServices = services.categories[selectedCategory].map(s => s.title);
+      navigate(`/dashboard?services=${encodeURIComponent(categoryServices.join(","))}`);
+    }
     setSelectedService(null);
   };
 
@@ -111,8 +114,6 @@ const ServicesSection = () => {
       <motion.h2 className="text-5xl font-extrabold mb-8 text-center text-[#2d545e] tracking-wider" initial={{ opacity: 0, y: -60 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.9, delay: 0.2 }}>
         Our <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#e1b382] to-[#c89666]">Elite Services</span>
       </motion.h2>
-
-      {/* Search Bar */}
       <div className="max-w-md mx-auto mb-12">
         <div className="relative">
           <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
@@ -125,8 +126,6 @@ const ServicesSection = () => {
           />
         </div>
       </div>
-
-      {/* Main Categories or Sub-Services */}
       {!selectedCategory ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {filteredCategories.map((category, index) => (
@@ -170,7 +169,6 @@ const ServicesSection = () => {
           </div>
         </div>
       )}
-
       <AnimatePresence>
         {selectedService && (
           <ServiceDetailModal service={selectedService} onClose={() => setSelectedService(null)} onApply={() => handleApply(selectedService)} />
@@ -180,7 +178,6 @@ const ServicesSection = () => {
   );
 };
 
-// Live Service Tracker Section
 const LiveServiceTracker = () => (
   <section className="py-16 bg-[#2d545e] text-white">
     <div className="max-w-6xl mx-auto px-6">
@@ -193,7 +190,6 @@ const LiveServiceTracker = () => (
   </section>
 );
 
-// Booking Form Section
 const BookingForm = () => {
   const [formData, setFormData] = useState({
     name: "", email: "", phone: "", address: "", date: "", service: "",
@@ -349,7 +345,6 @@ const BookingForm = () => {
   );
 };
 
-// Services Page
 const ServicesPage = ({ cart = [], user, setUser }) => (
   <div className="relative bg-gray-50 overflow-hidden">
     <motion.div className="absolute inset-0 bg-gradient-to-b from-[#2d545e]/10 to-transparent pointer-events-none z-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2.5 }} />
