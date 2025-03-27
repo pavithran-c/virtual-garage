@@ -1,9 +1,10 @@
 import React, { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import { FaCar, FaCalendarAlt, FaShoppingCart, FaSearch } from "react-icons/fa";
+import { FaCar, FaCalendarAlt, FaShoppingCart, FaSearch, FaPhoneAlt } from "react-icons/fa";
 import axios from "axios";
 import { allServices } from "../../data/services";
-import { useNavigate, useLocation } from "react-router-dom"; // Replace next/navigation
+import { useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -29,7 +30,10 @@ const Dashboard = () => {
     date: "",
     time: "",
     number: "",
+    phone: "",
+    serviceOption: "Pick Up & Delivery",
   });
+  const [phoneError, setPhoneError] = useState("");
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [appointmentToDelete, setAppointmentToDelete] = useState(null);
   const [showAppointmentDeleteModal, setShowAppointmentDeleteModal] = useState(false);
@@ -38,6 +42,7 @@ const Dashboard = () => {
   const MAX_APPOINTMENTS_PER_DAY = 8;
 
   const vehicleNumberRegex = /^[A-Z]{2}\s\d{2}\s[A-Z]\s\d{4}$/;
+  const phoneRegex = /^(?:\+91|0)?[6-9]\d{9}$/;
 
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -150,6 +155,13 @@ const Dashboard = () => {
       });
     } else {
       setAppointmentForm({ ...appointmentForm, [name]: value });
+      if (name === "phone") {
+        if (!phoneRegex.test(value)) {
+          setPhoneError("Phone number must be in format: 9876543210 or +919876543210 or 919876543210");
+        } else {
+          setPhoneError("");
+        }
+      }
     }
   };
 
@@ -181,8 +193,18 @@ const Dashboard = () => {
 
   const handleAppointmentSubmit = async (e) => {
     e.preventDefault();
-    if (appointmentForm.services.length === 0 || !appointmentForm.date || !appointmentForm.time || !appointmentForm.number) {
-      setError("All fields are required, including at least one service");
+    if (
+      appointmentForm.services.length === 0 ||
+      !appointmentForm.date ||
+      !appointmentForm.time ||
+      !appointmentForm.number ||
+      !appointmentForm.phone
+    ) {
+      setError("All fields are required, including at least one service and phone number");
+      return;
+    }
+    if (!phoneRegex.test(appointmentForm.phone)) {
+      setPhoneError("Phone number must be in format: +919876543210 or 9876543210 or 9876543210");
       return;
     }
     try {
@@ -200,12 +222,13 @@ const Dashboard = () => {
       } else {
         setAppointments([...appointments, response.data]);
       }
-      setAppointmentForm({ services: [], date: "", time: "", number: "" });
+      setAppointmentForm({ services: [], date: "", time: "", number: "", phone: "", serviceOption: "Pick Up & Delivery" });
       setIsAppointmentFormOpen(false);
       setError("");
+      setPhoneError("");
       setSearchTerm("");
       setCustomService("");
-      navigate("/dashboard"); // Reset URL
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error saving appointment:", error.response?.data || error);
       setError(error.response?.data?.message || "Failed to save appointment");
@@ -219,6 +242,8 @@ const Dashboard = () => {
       date: appointment.date,
       time: appointment.time,
       number: appointment.number,
+      phone: appointment.phone || "",
+      serviceOption: appointment.serviceOption || "Pick Up & Delivery",
     });
     setIsAppointmentFormOpen(true);
   };
@@ -263,7 +288,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="bg-[#12343b] text-white p-6 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold">Welcome, {user.user.username || "Guest"}!</h1>
+        <h1 className="text-3xl font-bold">Welcome, {user?.username || "Guest"}!</h1>
         <p className="text-lg mt-2">Your virtual garage is ready for you.</p>
       </div>
       {error && (
@@ -336,118 +361,150 @@ const Dashboard = () => {
           </table>
         )}
       </div>
-      {isFormOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Add a Vehicle</h3>
-            <form onSubmit={handleVehicleSubmit} className="space-y-4">
-              <div className="flex flex-col">
-                <label htmlFor="name" className="text-gray-700 font-medium">
-                  Vehicle Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={vehicleForm.name}
-                  onChange={handleVehicleChange}
-                  placeholder="e.g., My Sedan"
-                  className="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div className="flex flex-col">
-                <label htmlFor="manufacturer" className="text-gray-700 font-medium">
-                  Manufacturer
-                </label>
-                <input
-                  type="text"
-                  id="manufacturer"
-                  name="manufacturer"
-                  value={vehicleForm.manufacturer}
-                  onChange={handleVehicleChange}
-                  placeholder="e.g., Toyota"
-                  className="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div className="flex flex-col">
-                <label htmlFor="number" className="text-gray-700 font-medium">
-                  Vehicle Number (License Plate)
-                </label>
-                <input
-                  type="text"
-                  id="number"
-                  name="number"
-                  value={vehicleForm.number}
-                  onChange={handleVehicleChange}
-                  placeholder="e.g., TN 88 Y 0666"
-                  className={`mt-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    vehicleNumberError ? "border-red-500" : "border-gray-300"
-                  }`}
-                  required
-                />
-                {vehicleNumberError && (
-                  <p className="text-red-500 text-sm mt-1">{vehicleNumberError}</p>
-                )}
-              </div>
+      <AnimatePresence>
+        {isFormOpen && (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center z-50"
+            initial={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
+            animate={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+            exit={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setIsFormOpen(false)}
+          >
+            <motion.div
+              className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-semibold mb-4">Add a Vehicle</h3>
+              <form onSubmit={handleVehicleSubmit} className="space-y-4">
+                <div className="flex flex-col">
+                  <label htmlFor="name" className="text-gray-700 font-medium">
+                    Vehicle Name
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={vehicleForm.name}
+                    onChange={handleVehicleChange}
+                    placeholder="e.g., My Sedan"
+                    className="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="manufacturer" className="text-gray-700 font-medium">
+                    Manufacturer
+                  </label>
+                  <input
+                    type="text"
+                    id="manufacturer"
+                    name="manufacturer"
+                    value={vehicleForm.manufacturer}
+                    onChange={handleVehicleChange}
+                    placeholder="e.g., Toyota"
+                    className="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="number" className="text-gray-700 font-medium">
+                    Vehicle Number (License Plate)
+                  </label>
+                  <input
+                    type="text"
+                    id="number"
+                    name="number"
+                    value={vehicleForm.number}
+                    onChange={handleVehicleChange}
+                    placeholder="e.g., TN 88 Y 0666"
+                    className={`mt-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      vehicleNumberError ? "border-red-500" : "border-gray-300"
+                    }`}
+                    required
+                  />
+                  {vehicleNumberError && (
+                    <p className="text-red-500 text-sm mt-1">{vehicleNumberError}</p>
+                  )}
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsFormOpen(false)}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+                    disabled={!!vehicleNumberError}
+                  >
+                    Add Vehicle
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center z-50"
+            initial={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
+            animate={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+            exit={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setShowDeleteModal(false)}
+          >
+            <motion.div
+              className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-semibold mb-4">Confirm Deletion</h3>
+              <p className="mb-4">Are you sure you want to delete this vehicle? This action cannot be undone.</p>
+              {vehicleToDelete && vehicles.find((v) => v._id === vehicleToDelete) ? (
+                <p className="mb-4 text-gray-600">
+                  Vehicle: {vehicles.find((v) => v._id === vehicleToDelete).name} (
+                  {vehicles.find((v) => v._id === vehicleToDelete).manufacturer})
+                </p>
+              ) : (
+                <p className="mb-4 text-gray-600">Vehicle ID: {vehicleToDelete}</p>
+              )}
               <div className="flex justify-end space-x-2">
                 <button
-                  type="button"
-                  onClick={() => setIsFormOpen(false)}
+                  onClick={cancelDeleteVehicle}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
                 >
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-                  disabled={!!vehicleNumberError}
+                  onClick={confirmDeleteVehicle}
+                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
                 >
-                  Add Vehicle
+                  Delete
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Confirm Deletion</h3>
-            <p className="mb-4">Are you sure you want to delete this vehicle? This action cannot be undone.</p>
-            {vehicleToDelete && vehicles.find((v) => v._id === vehicleToDelete) ? (
-              <p className="mb-4 text-gray-600">
-                Vehicle: {vehicles.find((v) => v._id === vehicleToDelete).name} (
-                {vehicles.find((v) => v._id === vehicleToDelete).manufacturer})
-              </p>
-            ) : (
-              <p className="mb-4 text-gray-600">Vehicle ID: {vehicleToDelete}</p>
-            )}
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={cancelDeleteVehicle}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteVehicle}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">Upcoming Appointments</h3>
           <button
             onClick={() => {
               setEditingAppointment(null);
-              setAppointmentForm({ services: [], date: "", time: "", number: "" });
+              setAppointmentForm({ services: [], date: "", time: "", number: "", phone: "", serviceOption: "Pick Up & Delivery" });
               setIsAppointmentFormOpen(true);
               setSearchTerm("");
               setCustomService("");
@@ -467,6 +524,8 @@ const Dashboard = () => {
                 <th className="p-3 text-left">Date</th>
                 <th className="p-3 text-left">Time</th>
                 <th className="p-3 text-left">Vehicle Number</th>
+                <th className="p-3 text-left">Phone</th>
+                <th className="p-3 text-left">Service Option</th>
                 <th className="p-3 text-left">Actions</th>
               </tr>
             </thead>
@@ -479,6 +538,8 @@ const Dashboard = () => {
                   <td className="p-3">{appointment.date}</td>
                   <td className="p-3">{appointment.time}</td>
                   <td className="p-3">{appointment.number}</td>
+                  <td className="p-3">{appointment.phone || "N/A"}</td>
+                  <td className="p-3">{appointment.serviceOption || "N/A"}</td>
                   <td className="p-3">
                     <button
                       onClick={() => handleEditAppointment(appointment)}
@@ -499,211 +560,283 @@ const Dashboard = () => {
           </table>
         )}
       </div>
-      {isAppointmentFormOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">
-              {editingAppointment ? "Edit Appointment" : "Add Appointment"}
-            </h3>
-            <form onSubmit={handleAppointmentSubmit} className="space-y-4">
-              <div className="flex flex-col">
-                <label className="text-gray-700 font-medium">Services</label>
-                <div className="relative mt-1">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={handleSearchChange}
-                    placeholder="Search services..."
-                    className="w-full pl-10 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="mt-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-2 bg-gray-50">
-                  {filteredServices.length === 0 && !searchTerm ? (
-                    <p className="text-gray-500 text-sm">No services available</p>
-                  ) : filteredServices.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No services found</p>
-                  ) : (
-                    filteredServices.map((service) => (
-                      <div
-                        key={service}
-                        className="flex items-center space-x-2 py-1 hover:bg-gray-100 rounded-md px-2"
-                      >
-                        <input
-                          type="checkbox"
-                          id={`service-${service}`}
-                          name="services"
-                          value={service}
-                          checked={appointmentForm.services.includes(service)}
-                          onChange={handleAppointmentChange}
-                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <label
-                          htmlFor={`service-${service}`}
-                          className="text-gray-700 text-sm cursor-pointer"
+      <AnimatePresence>
+        {isAppointmentFormOpen && (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center z-50 overflow-y-auto"
+            initial={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
+            animate={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+            exit={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setIsAppointmentFormOpen(false)}
+          >
+            <motion.div
+              className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg m-4 max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-2xl font-bold text-[#12343b] mb-6">
+                {editingAppointment ? "Edit Appointment" : "Add Appointment"}
+              </h3>
+              <form onSubmit={handleAppointmentSubmit} className="space-y-6">
+                <div className="flex flex-col">
+                  <label className="text-gray-700 font-semibold mb-2">Services</label>
+                  <div className="relative">
+                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={handleSearchChange}
+                      placeholder="Search services..."
+                      className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    />
+                  </div>
+                  <div className="mt-3 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 bg-white shadow-sm">
+                    {filteredServices.length === 0 && !searchTerm ? (
+                      <p className="text-gray-500 text-sm">No services available</p>
+                    ) : filteredServices.length === 0 ? (
+                      <p className="text-gray-500 text-sm">No services found</p>
+                    ) : (
+                      filteredServices.map((service) => (
+                        <div
+                          key={service}
+                          className="flex items-center space-x-2 py-2 hover:bg-gray-100 rounded-md px-2"
+                        >
+                          <input
+                            type="checkbox"
+                            id={`service-${service}`}
+                            name="services"
+                            value={service}
+                            checked={appointmentForm.services.includes(service)}
+                            onChange={handleAppointmentChange}
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                          <label
+                            htmlFor={`service-${service}`}
+                            className="text-gray-700 text-sm cursor-pointer"
+                          >
+                            {service}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="mt-3 flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={customService}
+                      onChange={handleCustomServiceChange}
+                      onKeyPress={handleCustomServiceKeyPress}
+                      placeholder="Add custom service..."
+                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={addCustomService}
+                      className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {appointmentForm.services.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {appointmentForm.services.map((service) => (
+                        <span
+                          key={service}
+                          className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
                         >
                           {service}
-                        </label>
-                      </div>
-                    ))
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setAppointmentForm((prev) => ({
+                                ...prev,
+                                services: prev.services.filter((s) => s !== service),
+                              }))
+                            }
+                            className="ml-2 text-blue-600 hover:text-blue-800 focus:outline-none"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {appointmentForm.services.length === 0 && (
+                    <p className="text-red-500 text-sm mt-2">Please select or add at least one service</p>
                   )}
                 </div>
-                <div className="mt-2 flex items-center space-x-2">
+                <div className="flex flex-col">
+                  <label htmlFor="date" className="text-gray-700 font-semibold mb-2">
+                    Date
+                  </label>
                   <input
-                    type="text"
-                    value={customService}
-                    onChange={handleCustomServiceChange}
-                    onKeyPress={handleCustomServiceKeyPress}
-                    placeholder="Add custom service..."
-                    className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    type="date"
+                    id="date"
+                    name="date"
+                    value={appointmentForm.date}
+                    onChange={handleAppointmentChange}
+                    min={new Date().toISOString().split("T")[0]}
+                    className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    required
                   />
-                  <button
-                    type="button"
-                    onClick={addCustomService}
-                    className="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
-                  >
-                    Add
-                  </button>
+                  {appointmentForm.date &&
+                    getAppointmentsForDate(appointmentForm.date) >= MAX_APPOINTMENTS_PER_DAY &&
+                    !editingAppointment && (
+                      <p className="text-red-500 text-sm mt-2">
+                        This date is fully booked (max {MAX_APPOINTMENTS_PER_DAY} appointments)
+                      </p>
+                    )}
                 </div>
-                {appointmentForm.services.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {appointmentForm.services.map((service) => (
-                      <span
-                        key={service}
-                        className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
-                      >
-                        {service}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setAppointmentForm((prev) => ({
-                              ...prev,
-                              services: prev.services.filter((s) => s !== service),
-                            }))
-                          }
-                          className="ml-1 text-blue-600 hover:text-blue-800 focus:outline-none"
-                        >
-                          ×
-                        </button>
-                      </span>
+                <div className="flex flex-col">
+                  <label htmlFor="time" className="text-gray-700 font-semibold mb-2">
+                    Time
+                  </label>
+                  <input
+                    type="time"
+                    id="time"
+                    name="time"
+                    value={appointmentForm.time}
+                    onChange={handleAppointmentChange}
+                    className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="number" className="text-gray-700 font-semibold mb-2">
+                    Vehicle Number
+                  </label>
+                  <select
+                    id="number"
+                    name="number"
+                    value={appointmentForm.number}
+                    onChange={handleAppointmentChange}
+                    className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    required
+                  >
+                    <option value="">Select Vehicle Number</option>
+                    {vehicles.map((vehicle) => (
+                      <option key={vehicle._id} value={vehicle.number}>
+                        {vehicle.number} ({vehicle.name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col">
+                  <label htmlFor="phone" className="text-gray-700 font-semibold mb-2">
+                    Phone Number
+                  </label>
+                  <div className="relative">
+                    <FaPhoneAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={appointmentForm.phone}
+                      onChange={handleAppointmentChange}
+                      placeholder="e.g., 9876543210"
+                      className={`w-full pl-10 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 ${
+                        phoneError ? "border-red-500" : "border-gray-300"
+                      }`}
+                      required
+                    />
+                  </div>
+                  {phoneError && <p className="text-red-500 text-sm mt-2">{phoneError}</p>}
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-gray-700 font-semibold mb-2">Service Option</label>
+                  <div className="mt-1 flex flex-col space-y-3">
+                    {["Home Service", "Pick Up & Delivery", "On-Spot Service"].map((option) => (
+                      <label key={option} className="flex items-center">
+                        <input
+                          type="radio"
+                          name="serviceOption"
+                          value={option}
+                          checked={appointmentForm.serviceOption === option}
+                          onChange={handleAppointmentChange}
+                          className="mr-2 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="text-gray-700">{option}</span>
+                      </label>
                     ))}
                   </div>
-                )}
-                {appointmentForm.services.length === 0 && (
-                  <p className="text-red-500 text-sm mt-1">Please select or add at least one service</p>
-                )}
-              </div>
-              <div className="flex flex-col">
-                <label htmlFor="date" className="text-gray-700 font-medium">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  id="date"
-                  name="date"
-                  value={appointmentForm.date}
-                  onChange={handleAppointmentChange}
-                  min={new Date().toISOString().split("T")[0]}
-                  className="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                {appointmentForm.date &&
-                  getAppointmentsForDate(appointmentForm.date) >= MAX_APPOINTMENTS_PER_DAY &&
-                  !editingAppointment && (
-                    <p className="text-red-500 text-sm mt-1">
-                      This date is fully booked (max {MAX_APPOINTMENTS_PER_DAY} appointments)
-                    </p>
-                  )}
-              </div>
-              <div className="flex flex-col">
-                <label htmlFor="time" className="text-gray-700 font-medium">
-                  Time
-                </label>
-                <input
-                  type="time"
-                  id="time"
-                  name="time"
-                  value={appointmentForm.time}
-                  onChange={handleAppointmentChange}
-                  className="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div className="flex flex-col">
-                <label htmlFor="number" className="text-gray-700 font-medium">
-                  Vehicle Number
-                </label>
-                <select
-                  id="number"
-                  name="number"
-                  value={appointmentForm.number}
-                  onChange={handleAppointmentChange}
-                  className="mt-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Select Vehicle Number</option>
-                  {vehicles.map((vehicle) => (
-                    <option key={vehicle._id} value={vehicle.number}>
-                      {vehicle.number} ({vehicle.name})
-                    </option>
-                  ))}
-                </select>
-              </div>
+                </div>
+                <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setIsAppointmentFormOpen(false)}
+                    className="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition font-medium"
+                    disabled={
+                      phoneError ||
+                      (appointmentForm.date &&
+                        getAppointmentsForDate(appointmentForm.date) >= MAX_APPOINTMENTS_PER_DAY &&
+                        !editingAppointment)
+                    }
+                  >
+                    {editingAppointment ? "Update" : "Book"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showAppointmentDeleteModal && (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center z-50"
+            initial={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
+            animate={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+            exit={{ backgroundColor: "rgba(0, 0, 0, 0)" }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setShowAppointmentDeleteModal(false)}
+          >
+            <motion.div
+              className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-semibold mb-4">Confirm Deletion</h3>
+              <p className="mb-4">Are you sure you want to delete this appointment? This action cannot be undone.</p>
+              {appointmentToDelete && appointments.find((a) => a._id === appointmentToDelete) ? (
+                <p className="mb-4 text-gray-600">
+                  Appointment: {(appointments.find((a) => a._id === appointmentToDelete).services || [appointments.find((a) => a._id === appointmentToDelete).service]).join(", ")} on{" "}
+                  {appointments.find((a) => a._id === appointmentToDelete).date} at{" "}
+                  {appointments.find((a) => a._id === appointmentToDelete).time}
+                </p>
+              ) : (
+                <p className="mb-4 text-gray-600">Appointment ID: {appointmentToDelete}</p>
+              )}
               <div className="flex justify-end space-x-2">
                 <button
-                  type="button"
-                  onClick={() => setIsAppointmentFormOpen(false)}
+                  onClick={cancelDeleteAppointment}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
                 >
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-                  disabled={
-                    appointmentForm.date &&
-                    getAppointmentsForDate(appointmentForm.date) >= MAX_APPOINTMENTS_PER_DAY &&
-                    !editingAppointment
-                  }
+                  onClick={confirmDeleteAppointment}
+                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
                 >
-                  {editingAppointment ? "Update" : "Book"}
+                  Delete
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-      {showAppointmentDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Confirm Deletion</h3>
-            <p className="mb-4">Are you sure you want to delete this appointment? This action cannot be undone.</p>
-            {appointmentToDelete && appointments.find((a) => a._id === appointmentToDelete) ? (
-              <p className="mb-4 text-gray-600">
-                Appointment: {(appointments.find((a) => a._id === appointmentToDelete).services || [appointments.find((a) => a._id === appointmentToDelete).service]).join(", ")} on{" "}
-                {appointments.find((a) => a._id === appointmentToDelete).date} at{" "}
-                {appointments.find((a) => a._id === appointmentToDelete).time}
-              </p>
-            ) : (
-              <p className="mb-4 text-gray-600">Appointment ID: {appointmentToDelete}</p>
-            )}
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={cancelDeleteAppointment}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteAppointment}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-semibold mb-4">Recent Orders</h3>
         <table className="w-full border-collapse">

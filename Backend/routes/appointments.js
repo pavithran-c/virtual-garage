@@ -1,93 +1,159 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Appointment = require('../models/Appointment');
-const authMiddleware = require('../middleware/authMiddleware');
+const Appointment = require("../models/Appointment");
+const Vehicle = require("../models/Vehicle");
+const auth = require("../middleware/authMiddleware");
+
+// Maximum appointments per day
 const MAX_APPOINTMENTS_PER_DAY = 8;
 
-router.get('/', authMiddleware, async (req, res) => {
+// Get all appointments for the authenticated user
+router.get("/", auth, async (req, res) => {
   try {
-    console.log('Fetching appointments for user:', req.user.id);
-    const appointments = await Appointment.find({ userId: req.user.id });
-    console.log('Appointments found:', appointments);
+    const appointments = await Appointment.find({ user: req.user.id }).sort({ date: 1, time: 1 });
     res.json(appointments);
-  } catch (error) {
-    console.error('GET /api/appointments error:', error.stack);
-    res.status(500).json({ message: 'Error fetching appointments', error: error.message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-router.post('/', authMiddleware, async (req, res) => {
-  const { services, date, time, number } = req.body; // Changed `service` to `services`
-  console.log('POST /api/appointments request body:', req.body);
-  console.log('User ID from token:', req.user.id);
-
-  // Validate that services is a non-empty array
-  if (!services || !Array.isArray(services) || services.length === 0 || !date || !time || !number) {
-    return res.status(400).json({ message: 'All fields are required, including at least one service' });
-  }
+// Create a new appointment
+router.post("/", auth, async (req, res) => {
+  const { services, date, time, number, phone, serviceOption } = req.body;
 
   try {
-    const appointmentsOnDate = await Appointment.countDocuments({ date });
-    console.log(`Appointments on ${date}: ${appointmentsOnDate}`);
-    if (appointmentsOnDate >= MAX_APPOINTMENTS_PER_DAY) {
-      return res.status(400).json({
-        message: `Maximum ${MAX_APPOINTMENTS_PER_DAY} appointments reached for ${date}`,
-      });
+    // Validate vehicle exists for the user
+    const vehicle = await Vehicle.findOne({ number, userId: req.user.id });
+    console.log("Vehicle lookup:", { number, userId: req.user.id, found: vehicle });
+    if (!vehicle) {
+      return res.status(400).json({ message: "Vehicle not found or does not belong to you" });
     }
 
-    const newAppointment = new Appointment({
-      userId: req.user.id,
-      services, // Now an array
+    // Check if this vehicle is already used in any appointment for this user
+    const vehicleInUse = await Appointment.findOne({
+      number,
+      user: req.user.id,
+    });
+    if (vehicleInUse) {
+      return res.status(400).json({ message: "Duplicate vehicle entry detected" });
+    }
+
+    // Check for duplicate appointment (same vehicle, date, and time)
+    const existingAppointment = await Appointment.findOne({
+      number,
+      date,
+      time,
+      user: req.user.id,
+    });
+    if (existingAppointment) {
+      return res.status(400).json({ message: "An appointment already exists for this vehicle at this time" });
+    }
+
+    // Check daily appointment limit
+    const appointmentsOnDate = await Appointment.countDocuments({ date });
+    if (appointmentsOnDate >= MAX_APPOINTMENTS_PER_DAY) {
+      return res.status(400).json({ message: "Maximum appointments reached for this date" });
+    }
+
+    const appointment = new Appointment({
+      user: req.user.id,
+      services,
       date,
       time,
       number,
+      phone,
+      serviceOption,
     });
-    console.log('Saving new appointment:', newAppointment);
-    await newAppointment.save();
-    res.status(201).json(newAppointment);
-  } catch (error) {
-    console.error('POST /api/appointments error:', error.stack);
-    // Removed duplicate check since `number` is no longer unique
-    res.status(500).json({ message: 'Error creating appointment', error: error.message });
-  }
-});
-
-router.put('/:id', authMiddleware, async (req, res) => {
-  const { services, date, time, number } = req.body; // Changed `service` to `services`
-  console.log('PUT /api/appointments/:id request body:', req.body);
-
-  // Validate input
-  if (!services || !Array.isArray(services) || services.length === 0 || !date || !time || !number) {
-    return res.status(400).json({ message: 'All fields are required, including at least one service' });
-  }
-
-  try {
-    const updatedAppointment = await Appointment.findByIdAndUpdate(
-      req.params.id,
-      { services, date, time, number }, // Update with new fields
-      { new: true } // Return the updated document
-    );
-    if (!updatedAppointment) {
-      return res.status(404).json({ message: 'Appointment not found' });
+    console.log("New appointment:", appointment);
+    const savedAppointment = await appointment.save();
+    res.status(201).json(savedAppointment);
+  } catch (err) {
+    console.error(err);
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ message: err.message });
     }
-    console.log('Updated appointment:', updatedAppointment);
-    res.json(updatedAppointment);
-  } catch (error) {
-    console.error('PUT /api/appointments/:id error:', error.stack);
-    res.status(500).json({ message: 'Error updating appointment', error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
-router.delete('/:id', authMiddleware, async (req, res) => {
-  try {
-    const appointment = await Appointment.findByIdAndDelete(req.params.id);
-    if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+// Update an appointment
+router.put("/:id", auth, async (req, res) => {
+  const { services, date, time, number, phone, serviceOption } = req.body;
 
-    console.log('Deleted appointment:', appointment);
-    res.json({ message: 'Appointment deleted successfully' });
-  } catch (error) {
-    console.error('DELETE /api/appointments/:id error:', error.stack);
-    res.status(500).json({ message: 'Server error', error: error.message });
+  try {
+    let appointment = await Appointment.findById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    // Ensure the appointment belongs to the user
+    if (appointment.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized to update this appointment" });
+    }
+
+    // Validate vehicle exists
+    const vehicle = await Vehicle.findOne({ number, userId: req.user.id });
+    if (!vehicle) {
+      return res.status(400).json({ message: "Vehicle not found or does not belong to you" });
+    }
+
+    // Check for conflicting appointments (excluding this one)
+    const conflictingAppointment = await Appointment.findOne({
+      _id: { $ne: req.params.id },
+      number,
+      date,
+      time,
+      user: req.user.id,
+    });
+    if (conflictingAppointment) {
+      return res.status(400).json({ message: "Another appointment exists for this vehicle at this time" });
+    }
+
+    // Check daily limit (excluding this appointment’s original date)
+    if (appointment.date !== date) {
+      const appointmentsOnNewDate = await Appointment.countDocuments({ date });
+      if (appointmentsOnNewDate >= MAX_APPOINTMENTS_PER_DAY) {
+        return res.status(400).json({ message: "Maximum appointments reached for the new date" });
+      }
+    }
+
+    appointment.services = services;
+    appointment.date = date;
+    appointment.time = time;
+    appointment.number = number;
+    appointment.phone = phone;
+    appointment.serviceOption = serviceOption;
+
+    const updatedAppointment = await appointment.save();
+    res.json(updatedAppointment);
+  } catch (err) {
+    console.error(err);
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ message: err.message });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Delete an appointment
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    // Ensure the appointment belongs to the user
+    if (appointment.user.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not authorized to delete this appointment" });
+    }
+
+    await Appointment.deleteOne({ _id: req.params.id });
+    res.json({ message: "Appointment deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

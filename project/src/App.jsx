@@ -13,7 +13,7 @@ import AIRecommender from "./Components/AIRecommender/AIRecommender"; // Updated
 import LiveTrack from "./Components/LiveTrack/LiveTrack";             // Assumed similar structure
 import Profile from "./Components/Profile/Profile";                   // Assumed similar structure
 import About from "./Components/About/About";                         // Assumed similar structure
-
+import AnalyticsDashboard from "./Components/AIRecommender/Analitics";
 // Get client ID from environment variable
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -119,6 +119,16 @@ const App = () => {
                 <ProtectedRoute>
                   <Navbar />
                   <About />
+                  <Footer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <Navbar />
+                  <AnalyticsDashboard />
                   <Footer />
                 </ProtectedRoute>
               }

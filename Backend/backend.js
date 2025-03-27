@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const authRoutes = require('./routes/authRoutes');
 const vehicleRoutes = require('./routes/vehicleroutes');
 const appointmentRoutes = require('./routes/appointments');
+const aiRoutes = require('./routes/aiRoutes'); // Import AI routes
 
 const app = express();
 
@@ -25,6 +26,7 @@ console.log('Environment variables loaded:', {
   JWT_SECRET: process.env.JWT_SECRET ? 'Set' : 'Not Set',
   FRONTEND_URL: process.env.FRONTEND_URL || 'Not Set',
   PORT: process.env.PORT || 'Not Set',
+  WS_PORT: process.env.WS_PORT || 'Not Set',
 });
 
 // MongoDB Connection with Retry
@@ -43,7 +45,7 @@ connectWithRetry();
 
 // Authentication Middleware
 const authMiddleware = (req, res, next) => {
-  const token = req.cookies.token; // Assuming token is stored in a cookie named 'token'
+  const token = req.cookies.token;
   if (!token) {
     return res.status(401).json({ message: 'No token provided, please log in' });
   }
@@ -51,10 +53,10 @@ const authMiddleware = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = {
-      _id: decoded._id, // Assuming your JWT payload has '_id'
-      username: decoded.username, // Assuming your JWT payload has 'username'
+      _id: decoded._id,
+      username: decoded.username,
     };
-    console.log('Authenticated user:', req.user); // Debug log
+    console.log('Authenticated user:', req.user);
     next();
   } catch (error) {
     console.error('JWT verification error:', error);
@@ -64,8 +66,9 @@ const authMiddleware = (req, res, next) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/vehicles', authMiddleware, vehicleRoutes); // Protect vehicle routes too
+app.use('/api/vehicles', authMiddleware, vehicleRoutes);
 app.use('/api/appointments', authMiddleware, appointmentRoutes);
+app.use('/api', aiRoutes); // Mount AI routes under /api
 
 // Start server
 const PORT = process.env.PORT || 5000;

@@ -1,0 +1,13 @@
+2025-03-26T04:41:47.542Z | Query: "Engine won’t turn over" | Predicted: "Battery Replacement" | Confidence: 0.1673
+2025-03-26T04:53:11.233Z | Query: "Tire shakes at 60 mph" | Predicted: "Tire Balancing" | Confidence: 0.2815
+2025-03-26T04:59:52.293Z | Query: "Tire shakes at 60 mph" | Predicted: "Tire Balancing" | Confidence: 0.2815
+2025-03-26T05:13:08.447Z | Query: "Book a service" | Predicted: "How to Book a Service" | Confidence: 0.2286
+2025-03-26T05:24:20.174Z | Query: "Battery drains overnight" | Predicted: "Battery Replacement" | Confidence: 0.1829
+2025-03-26T05:40:32.172Z | Query: "Brakes pulse at stop" | Predicted: "Brake Rotor Resurfacing" | Confidence: 0.2029
+2025-03-26T07:41:45.398Z | Query: "Brakes pulse at stop" | Predicted: "Brake Rotor Resurfacing" | Confidence: 0.2029
+2025-03-26T07:41:54.626Z | Query: "Brakes pulse at " | Predicted: "Brake Rotor Resurfacing" | Confidence: 0.1874
+2025-03-26T07:41:57.493Z | Query: "Brakes pulse at " | Predicted: "Brake Rotor Resurfacing" | Confidence: 0.1874
+2025-03-26T07:42:03.351Z | Query: "Brakes pul" | Predicted: "Brake Rotor Resurfacing" | Confidence: 0.1874
+2025-03-26T07:42:15.798Z | Query: "How to book a service" | Predicted: "How to Book a Service" | Confidence: 0.2286
+2025-03-26T07:42:28.490Z | Query: "How to bok a service" | Predicted: "How to Search Services" | Confidence: 0.13462025-03-27T15:30:03.371Z | Query: "Battery dead overnight" | Predicted: "Battery Replacement" | Confidence: 0.1927
+2025-03-27T15:31:51.443Z | Query: "How to book a service" | Predicted: "How to Book a Service" | Confidence: 0.2286
