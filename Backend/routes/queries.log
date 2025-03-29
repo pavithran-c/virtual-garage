@@ -11,3 +11,10 @@
 2025-03-26T07:42:15.798Z | Query: "How to book a service" | Predicted: "How to Book a Service" | Confidence: 0.2286
 2025-03-26T07:42:28.490Z | Query: "How to bok a service" | Predicted: "How to Search Services" | Confidence: 0.13462025-03-27T15:30:03.371Z | Query: "Battery dead overnight" | Predicted: "Battery Replacement" | Confidence: 0.1927
 2025-03-27T15:31:51.443Z | Query: "How to book a service" | Predicted: "How to Book a Service" | Confidence: 0.2286
+2025-03-28T05:50:10.826Z | Query: "battery" | Predicted: "Battery Replacement" | Confidence: 0.1689
+2025-03-28T05:50:25.741Z | Query: "bat" | Predicted: "Battery Replacement" | Confidence: 0.0588
+2025-03-28T05:50:34.154Z | Query: "batteries" | Predicted: "Battery Replacement" | Confidence: 0.1689
+2025-03-28T05:52:07.789Z | Query: "engine not starting" | Predicted: "Spark Plug Replacement" | Confidence: 0.1498
+2025-03-28T05:53:26.287Z | Query: "Engine won’t turn over" | Predicted: "Battery Replacement" | Confidence: 0.1397
+2025-03-28T05:53:27.659Z | Query: "Engine won’t turn over" | Predicted: "Battery Replacement" | Confidence: 0.1397
+2025-03-28T06:28:35.730Z | Query: "battery" | Predicted: "Battery Replacement" | Confidence: 0.1689

@@ -23,7 +23,8 @@ const Dashboard = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const initialServices = queryParams.get("services")?.split(",").map(decodeURIComponent) || [];
-  const [appointments, setAppointments] = useState([]);
+  const [appointments, setAppointments] = useState([]); // Active appointments (Pending/Accepted)
+  const [recentOrders, setRecentOrders] = useState([]); // Completed appointments
   const [isAppointmentFormOpen, setIsAppointmentFormOpen] = useState(!!initialServices.length);
   const [appointmentForm, setAppointmentForm] = useState({
     services: initialServices,
@@ -67,7 +68,16 @@ const Dashboard = () => {
       if (!user) return;
       try {
         const response = await axios.get(`${API_URL}/appointments`, { withCredentials: true });
-        setAppointments(response.data);
+        const allAppointments = response.data;
+        // Split into active appointments and recent orders based on status
+        const activeAppointments = allAppointments.filter(
+          (appt) => appt.status !== "Completed"
+        );
+        const completedAppointments = allAppointments.filter(
+          (appt) => appt.status === "Completed"
+        );
+        setAppointments(activeAppointments);
+        setRecentOrders(completedAppointments);
         setError("");
       } catch (error) {
         console.error("Error fetching appointments:", error.response || error);
@@ -214,15 +224,32 @@ const Dashboard = () => {
           })
         : await axios.post(`${API_URL}/appointments`, appointmentForm, { withCredentials: true });
 
+      const updatedAppointment = response.data.appointment || response.data; // Handle response structure
       if (editingAppointment) {
-        setAppointments(
-          appointments.map((appt) => (appt._id === editingAppointment._id ? response.data : appt))
-        );
+        if (updatedAppointment.status === "Completed") {
+          setAppointments(
+            appointments.filter((appt) => appt._id !== editingAppointment._id)
+          );
+          setRecentOrders([...recentOrders, updatedAppointment]);
+        } else {
+          setAppointments(
+            appointments.map((appt) =>
+              appt._id === editingAppointment._id ? updatedAppointment : appt
+            )
+          );
+        }
         setEditingAppointment(null);
       } else {
-        setAppointments([...appointments, response.data]);
+        setAppointments([...appointments, updatedAppointment]);
       }
-      setAppointmentForm({ services: [], date: "", time: "", number: "", phone: "", serviceOption: "Pick Up & Delivery" });
+      setAppointmentForm({
+        services: [],
+        date: "",
+        time: "",
+        number: "",
+        phone: "",
+        serviceOption: "Pick Up & Delivery",
+      });
       setIsAppointmentFormOpen(false);
       setError("");
       setPhoneError("");
@@ -260,8 +287,13 @@ const Dashboard = () => {
       return;
     }
     try {
+      const appointment = appointments.find((appt) => appt._id === appointmentToDelete);
       await axios.delete(`${API_URL}/appointments/${appointmentToDelete}`, { withCredentials: true });
-      setAppointments(appointments.filter((appt) => appt._id !== appointmentToDelete));
+      if (appointment.status === "Completed") {
+        setRecentOrders(recentOrders.filter((order) => order._id !== appointmentToDelete));
+      } else {
+        setAppointments(appointments.filter((appt) => appt._id !== appointmentToDelete));
+      }
       setShowAppointmentDeleteModal(false);
       setAppointmentToDelete(null);
       setError("");
@@ -313,7 +345,7 @@ const Dashboard = () => {
           <FaShoppingCart className="text-yellow-500 text-3xl" />
           <div>
             <p className="text-gray-500">Recent Orders</p>
-            <h3 className="text-2xl font-bold">5</h3>
+            <h3 className="text-2xl font-bold">{recentOrders.length}</h3>
           </div>
         </div>
       </div>
@@ -504,7 +536,14 @@ const Dashboard = () => {
           <button
             onClick={() => {
               setEditingAppointment(null);
-              setAppointmentForm({ services: [], date: "", time: "", number: "", phone: "", serviceOption: "Pick Up & Delivery" });
+              setAppointmentForm({
+                services: [],
+                date: "",
+                time: "",
+                number: "",
+                phone: "",
+                serviceOption: "Pick Up & Delivery",
+              });
               setIsAppointmentFormOpen(true);
               setSearchTerm("");
               setCustomService("");
@@ -526,6 +565,7 @@ const Dashboard = () => {
                 <th className="p-3 text-left">Vehicle Number</th>
                 <th className="p-3 text-left">Phone</th>
                 <th className="p-3 text-left">Service Option</th>
+                <th className="p-3 text-left">Status</th>
                 <th className="p-3 text-left">Actions</th>
               </tr>
             </thead>
@@ -540,6 +580,19 @@ const Dashboard = () => {
                   <td className="p-3">{appointment.number}</td>
                   <td className="p-3">{appointment.phone || "N/A"}</td>
                   <td className="p-3">{appointment.serviceOption || "N/A"}</td>
+                  <td className="p-3">
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm ${
+                        appointment.status === "Pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : appointment.status === "Accepted"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {appointment.status || "Pending"}
+                    </span>
+                  </td>
                   <td className="p-3">
                     <button
                       onClick={() => handleEditAppointment(appointment)}
@@ -812,7 +865,7 @@ const Dashboard = () => {
               <p className="mb-4">Are you sure you want to delete this appointment? This action cannot be undone.</p>
               {appointmentToDelete && appointments.find((a) => a._id === appointmentToDelete) ? (
                 <p className="mb-4 text-gray-600">
-                  Appointment: {(appointments.find((a) => a._id === appointmentToDelete).services || [appointments.find((a) => a._id === appointmentToDelete).service]).join(", ")} on{" "}
+                  Appointment: {(appointments.find((a) => a._id === appointmentToDelete).services || []).join(", ")} on{" "}
                   {appointments.find((a) => a._id === appointmentToDelete).date} at{" "}
                   {appointments.find((a) => a._id === appointmentToDelete).time}
                 </p>
@@ -839,27 +892,30 @@ const Dashboard = () => {
       </AnimatePresence>
       <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-semibold mb-4">Recent Orders</h3>
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-3 text-left">Order</th>
-              <th className="p-3 text-left">Amount</th>
-              <th className="p-3 text-left">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b">
-              <td className="p-3">Car Battery Replacement</td>
-              <td className="p-3">$150</td>
-              <td className="p-3 text-green-500">Completed</td>
-            </tr>
-            <tr>
-              <td className="p-3">Engine Checkup</td>
-              <td className="p-3">$80</td>
-              <td className="p-3 text-yellow-500">Pending</td>
-            </tr>
-          </tbody>
-        </table>
+        {recentOrders.length === 0 ? (
+          <p className="text-gray-500">No recent orders yet.</p>
+        ) : (
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="p-3 text-left">Order</th>
+                <th className="p-3 text-left">Date</th>
+                <th className="p-3 text-left">Vehicle Number</th>
+                <th className="p-3 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentOrders.map((order) => (
+                <tr key={order._id} className="border-b">
+                  <td className="p-3">{(order.services || []).join(", ")}</td>
+                  <td className="p-3">{order.date}</td>
+                  <td className="p-3">{order.number}</td>
+                  <td className="p-3 text-green-500">{order.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

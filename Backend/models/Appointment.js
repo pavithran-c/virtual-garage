@@ -39,6 +39,11 @@ const appointmentSchema = new mongoose.Schema({
     enum: ["Home Service", "Pick Up & Delivery", "On-Spot Service"],
     default: "Pick Up & Delivery",
   },
+  status: {
+    type: String,
+    enum: ["Appointment Successfull","Date Change Requested","Pending", "Accepted", "Completed"],
+    default: "Pending",
+  },
   createdAt: {
     type: Date,
     default: Date.now,

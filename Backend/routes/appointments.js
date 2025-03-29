@@ -64,10 +64,14 @@ router.post("/", auth, async (req, res) => {
       number,
       phone,
       serviceOption,
+      status: "Appointment Successfull", // Default as per schema, adjust if needed
     });
     console.log("New appointment:", appointment);
     const savedAppointment = await appointment.save();
-    res.status(201).json(savedAppointment);
+    res.status(201).json({
+      appointment: savedAppointment,
+      message: "Appointment successfully created", // Success message
+    });
   } catch (err) {
     console.error(err);
     if (err.name === "ValidationError") {
