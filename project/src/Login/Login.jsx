@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
@@ -71,7 +71,7 @@ const LoginSignup = () => {
       login(backendResponse.data);
       navigate("/home");
     } catch (error) {
-      console.error('Google Auth Error:', error.response || error);
+      console.error("Google Auth Error:", error.response || error);
       setError(error.response?.data?.message || "Google authentication failed");
     } finally {
       setLoading(false);
@@ -81,6 +81,24 @@ const LoginSignup = () => {
   const handleGoogleError = () => {
     setError("Google authentication failed");
   };
+
+  // Handle cursor movement to update bubble positions
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const bubbles = document.querySelectorAll(".bubble");
+      bubbles.forEach((bubble, index) => {
+        const speed = (index + 1) * 0.02; // Different speeds for each bubble
+        const x = e.clientX * speed;
+        const y = e.clientY * speed;
+        bubble.style.transform = `translate(${x}px, ${y}px)`;
+      });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
 
   const GoogleAuthButton = () => (
     <div className="google-btn-container">
@@ -103,6 +121,12 @@ const LoginSignup = () => {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <div className="login-page">
+        {/* Add bubbles to the background */}
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+        <div className="bubble"></div>
+        <div className="bubble"></div>
         <div className={`container ${isActive ? "active" : ""}`}>
           {error && <div className="error-message">{error}</div>}
           {loading && <div className="loading-spinner">Loading...</div>}
