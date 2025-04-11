@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaBars, FaTimes } from "react-icons/fa";
+import { FaBars, FaTimes, FaSun, FaMoon } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
+import { ThemeContext } from "../../Components/ThemeContext";
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -49,7 +51,7 @@ const Navbar = () => {
   return (
     <>
       <motion.header
-        className={`fixed top-0 left-0 right-0 h-20 z-50 transition-all duration-300 bg-[#0d2a32]/80 backdrop-blur-sm`}
+        className={`fixed top-0 left-0 right-0 h-20 z-50 transition-all duration-300 ${theme === "dark" ? "bg-[#12343b]/90" : "bg-[#0d2a32]/80"} backdrop-blur-sm`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -59,13 +61,19 @@ const Navbar = () => {
             <span className="text-2xl font-bold text-[#e1b382]">FRIENDS CAR CARE</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-4">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 className={`px-4 py-2 rounded-md transition-colors duration-200 ${
-                  location.pathname === link.to ? "bg-[#2d545e]/80 text-[#e1b382]" : "text-[#e1b382] hover:bg-[#2d545e]/60"
+                  location.pathname === link.to
+                    ? theme === "dark"
+                      ? "bg-[#2d545e]/80 text-[#e1b382]"
+                      : "bg-[#2d545e]/80 text-[#e1b382]"
+                    : theme === "dark"
+                    ? "text-[#e1b382] hover:bg-[#2d545e]/60"
+                    : "text-[#e1b382] hover:bg-[#2d545e]/60"
                 }`}
               >
                 {link.text}
@@ -74,11 +82,18 @@ const Navbar = () => {
             {user && (
               <button
                 onClick={handleLogout}
-                className="bg-[#2d545e]/80 text-[#e1b382] px-6 py-2 rounded-md hover:bg-[#0d2a32]/80 transition-colors"
+                className={`px-6 py-2 rounded-md transition-colors ${theme === "dark" ? "bg-[#2d545e]/80 text-[#e1b382] hover:bg-[#12343b]/80" : "bg-[#2d545e]/80 text-[#e1b382] hover:bg-[#0d2a32]/80"}`}
               >
                 Logout
               </button>
             )}
+            <button
+              onClick={toggleTheme}
+              className={`p-2 rounded-full ${theme === "dark" ? "bg-[#e1b382] text-[#12343b]" : "bg-[#12343b] text-[#e1b382]"} hover:shadow-md transition-all duration-300`}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <FaSun size={20} /> : <FaMoon size={20} />}
+            </button>
           </nav>
 
           <button
@@ -95,7 +110,7 @@ const Navbar = () => {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            className="fixed top-20 left-0 right-0 z-40 bg-[#0d2a32]/80 backdrop-blur-sm shadow-lg md:hidden"
+            className={`fixed top-20 left-0 right-0 z-40 shadow-lg md:hidden ${theme === "dark" ? "bg-[#12343b]/90" : "bg-[#0d2a32]/80"} backdrop-blur-sm`}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -107,7 +122,13 @@ const Navbar = () => {
                   key={link.to}
                   to={link.to}
                   className={`px-4 py-3 rounded-md transition-colors duration-200 ${
-                    location.pathname === link.to ? "bg-[#2d545e]/80 text-[#e1b382]" : "text-[#e1b382] hover:bg-[#2d545e]/60"
+                    location.pathname === link.to
+                      ? theme === "dark"
+                        ? "bg-[#2d545e]/80 text-[#e1b382]"
+                        : "bg-[#2d545e]/80 text-[#e1b382]"
+                      : theme === "dark"
+                      ? "text-[#e1b382] hover:bg-[#2d545e]/60"
+                      : "text-[#e1b382] hover:bg-[#2d545e]/60"
                   }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -117,11 +138,20 @@ const Navbar = () => {
               {user && (
                 <button
                   onClick={handleLogout}
-                  className="mt-2 bg-[#2d545e]/80 text-[#e1b382] px-4 py-3 rounded-md hover:bg-[#0d2a32]/80 transition-colors w-full text-left"
+                  className={`mt-2 px-4 py-3 rounded-md transition-colors w-full text-left ${theme === "dark" ? "bg-[#2d545e]/80 text-[#e1b382] hover:bg-[#12343b]/80" : "bg-[#2d545e]/80 text-[#e1b382] hover:bg-[#0d2a32]/80"}`}
                 >
                   Logout
                 </button>
               )}
+              <button
+                onClick={() => {
+                  toggleTheme();
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`mt-2 px-4 py-3 rounded-md transition-colors w-full text-left ${theme === "dark" ? "bg-[#e1b382] text-[#12343b]" : "bg-[#12343b] text-[#e1b382]"} hover:shadow-md`}
+              >
+                {theme === "dark" ? "Light Mode" : "Dark Mode"}
+              </button>
             </nav>
           </motion.div>
         )}
