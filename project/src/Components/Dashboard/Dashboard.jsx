@@ -46,6 +46,13 @@ const Dashboard = () => {
   const vehicleNumberRegex = /^[A-Z]{2}\s\d{2}\s[A-Z]\s\d{4}$/;
   const phoneRegex = /^(?:\+91|0)?[6-9]\d{9}$/;
 
+  // Calculate the max date (6 months from today)
+  const getMaxDate = () => {
+    const today = new Date();
+    const maxDate = new Date(today.setMonth(today.getMonth() + 6));
+    return maxDate.toISOString().split("T")[0];
+  };
+
   useEffect(() => {
     const fetchVehicles = async () => {
       if (!user) return;
@@ -198,13 +205,13 @@ const Dashboard = () => {
   };
 
   const getAppointmentsForDate = (date) => {
-    return appointments.filter((appt) => appt.date === date).length;
+    return appointments.filter((appt) => appt.date === date && appt.status !== "Completed").length;
   };
 
   const isDuplicateAppointment = (newAppt) => {
     return appointments.some((appt) => {
       const sameNumber = appt.number === newAppt.number;
-      return sameNumber && appt.status !== "Completed";
+      return sameNumber && appt.status !== "Completed" && appt._id !== (editingAppointment?._id || "");
     });
   };
 
@@ -580,6 +587,7 @@ const Dashboard = () => {
                 <th className="p-3 text-left">Phone</th>
                 <th className="p-3 text-left">Service Option</th>
                 <th className="p-3 text-left">Status</th>
+                <th className="p-3 text-left">Change Request</th>
                 <th className="p-3 text-left">Actions</th>
               </tr>
             </thead>
@@ -608,7 +616,16 @@ const Dashboard = () => {
                     </span>
                   </td>
                   <td className="p-3">
-                    {appointment.status === "Pending" && (
+                    {appointment.changeRequested ? (
+                      <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+                        Requested: {appointment.changeReason}
+                      </span>
+                    ) : (
+                      "N/A"
+                    )}
+                  </td>
+                  <td className="p-3">
+                    {(appointment.status === "Pending" || appointment.changeRequested) && (
                       <>
                         <button
                           onClick={() => handleEditAppointment(appointment)}
@@ -652,6 +669,12 @@ const Dashboard = () => {
               <h3 className="text-2xl font-bold text-[#12343b] mb-6">
                 {editingAppointment ? "Edit Appointment" : "Add Appointment"}
               </h3>
+              {editingAppointment?.changeRequested && (
+                <div className="mb-6 p-4 bg-orange-100 text-orange-800 rounded-lg">
+                  <p className="font-semibold">Admin Request:</p>
+                  <p>Please change the appointment date. Reason: {editingAppointment.changeReason}</p>
+                </div>
+              )}
               <form onSubmit={handleAppointmentSubmit} className="space-y-6">
                 <div className="flex flex-col">
                   <label className="text-gray-700 font-semibold mb-2">Services</label>
@@ -751,6 +774,7 @@ const Dashboard = () => {
                     value={appointmentForm.date}
                     onChange={handleAppointmentChange}
                     min={new Date().toISOString().split("T")[0]}
+                    max={getMaxDate()} // Set max date to 6 months from today
                     className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
                     required
                   />

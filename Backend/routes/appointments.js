@@ -11,7 +11,7 @@ const MAX_APPOINTMENTS_PER_DAY = 8;
 router.get("/", auth, async (req, res) => {
   try {
     const appointments = await Appointment.find({ user: req.user.id }).sort({ date: 1, time: 1 });
-    res.json(appointments);
+    res.json(appointments); // changeRequested and changeReason are included by default
   } catch (err) {
     console.error("Error fetching appointments:", err);
     res.status(500).json({ message: "Server error" });
@@ -23,30 +23,26 @@ router.post("/", auth, async (req, res) => {
   const { services, date, time, number, phone, serviceOption } = req.body;
 
   try {
-    // Validate required fields
     if (!services || !date || !time || !number || !phone) {
       return res.status(400).json({ message: "All fields (services, date, time, number, phone) are required" });
     }
 
-    // Validate vehicle exists for the user
     const vehicle = await Vehicle.findOne({ number, userId: req.user.id });
     if (!vehicle) {
       return res.status(400).json({ message: "Vehicle not found or does not belong to you" });
     }
 
-    // Check for duplicate appointment (same vehicle, date, and time), excluding Completed ones
     const existingAppointment = await Appointment.findOne({
       number,
       date,
       time,
       user: req.user.id,
-      status: { $ne: "Completed" }, // Only block if not Completed
+      status: { $ne: "Completed" },
     });
     if (existingAppointment) {
       return res.status(400).json({ message: "An active appointment already exists for this vehicle at this time" });
     }
 
-    // Check daily appointment limit
     const appointmentsOnDate = await Appointment.countDocuments({ date, status: { $ne: "Completed" } });
     if (appointmentsOnDate >= MAX_APPOINTMENTS_PER_DAY) {
       return res.status(400).json({ message: "Maximum appointments reached for this date" });
@@ -60,7 +56,7 @@ router.post("/", auth, async (req, res) => {
       number,
       phone,
       serviceOption,
-      status: "Pending", // Default status set to "Pending" for consistency
+      status: "Pending",
     });
 
     const savedAppointment = await appointment.save();
@@ -82,7 +78,6 @@ router.put("/:id", auth, async (req, res) => {
   const { services, date, time, number, phone, serviceOption, status } = req.body;
 
   try {
-    // Validate required fields
     if (!services || !date || !time || !number || !phone) {
       return res.status(400).json({ message: "All fields (services, date, time, number, phone) are required" });
     }
@@ -92,18 +87,15 @@ router.put("/:id", auth, async (req, res) => {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
-    // Ensure the appointment belongs to the user
     if (appointment.user.toString() !== req.user.id) {
       return res.status(403).json({ message: "Not authorized to update this appointment" });
     }
 
-    // Validate vehicle exists
     const vehicle = await Vehicle.findOne({ number, userId: req.user.id });
     if (!vehicle) {
       return res.status(400).json({ message: "Vehicle not found or does not belong to you" });
     }
 
-    // Check for conflicting appointments (excluding this one), only if not Completed
     const conflictingAppointment = await Appointment.findOne({
       _id: { $ne: req.params.id },
       number,
@@ -116,7 +108,6 @@ router.put("/:id", auth, async (req, res) => {
       return res.status(400).json({ message: "Another active appointment exists for this vehicle at this time" });
     }
 
-    // Check daily limit (excluding this appointment’s original date if it’s not Completed)
     if (appointment.date !== date && appointment.status !== "Completed") {
       const appointmentsOnNewDate = await Appointment.countDocuments({ date, status: { $ne: "Completed" } });
       if (appointmentsOnNewDate >= MAX_APPOINTMENTS_PER_DAY) {
@@ -124,14 +115,19 @@ router.put("/:id", auth, async (req, res) => {
       }
     }
 
-    // Update fields
     appointment.services = services;
     appointment.date = date;
     appointment.time = time;
     appointment.number = number;
     appointment.phone = phone;
     appointment.serviceOption = serviceOption;
-    if (status) appointment.status = status; // Allow status update if provided
+    if (status) appointment.status = status;
+
+    // Reset changeRequested and changeReason if the user updates the date
+    if (appointment.changeRequested && appointment.date !== date) {
+      appointment.changeRequested = false;
+      appointment.changeReason = null;
+    }
 
     const updatedAppointment = await appointment.save();
     res.json(updatedAppointment);
@@ -152,7 +148,6 @@ router.delete("/:id", auth, async (req, res) => {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
-    // Ensure the appointment belongs to the user
     if (appointment.user.toString() !== req.user.id) {
       return res.status(403).json({ message: "Not authorized to delete this appointment" });
     }

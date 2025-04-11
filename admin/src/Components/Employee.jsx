@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-// Remove ServiceProgressInput since progress isn’t in the schema
-// import ServiceProgressInput from "./ServiceProgressInput";
 
 const ADMIN_API_URL = "http://localhost:5001/api/admin/appointments";
 
@@ -127,6 +125,7 @@ const AdminPortal = () => {
       alert("Please select a reason before requesting a date change.");
       return;
     }
+
     try {
       const response = await fetch(`${ADMIN_API_URL}/${id}`, {
         method: "PATCH",
@@ -136,10 +135,12 @@ const AdminPortal = () => {
         },
         body: JSON.stringify({ changeRequested: true, changeReason: reason }),
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(`Failed to request date change: ${errorData.message || response.statusText}`);
       }
+
       const updatedAppointment = await response.json();
       setAppointments(
         appointments.map((appt) =>
@@ -152,7 +153,7 @@ const AdminPortal = () => {
             : appt
         )
       );
-      alert(`Requested ${updatedAppointment.user} to change their appointment date. Reason: ${reason}`);
+      alert(`Requested ${updatedAppointment.user || "user"} to change their appointment date. Reason: ${reason}`);
     } catch (error) {
       console.error("Error requesting date change:", error);
       alert(error.message);

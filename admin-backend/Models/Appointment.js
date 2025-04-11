@@ -48,6 +48,8 @@ const appointmentSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  changeRequested: { type: Boolean, default: false },
+  changeReason: { type: String, default: null },
 });
 
 module.exports = mongoose.model("Appointment", appointmentSchema);
