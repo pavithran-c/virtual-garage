@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const appointmentSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "users",
+    ref: "User",
     required: true,
   },
   services: {
@@ -25,7 +25,6 @@ const appointmentSchema = new mongoose.Schema({
   number: {
     type: String, // Vehicle number (license plate)
     required: true,
-    ref:"vehicles"
   },
   phone: {
     type: String,
@@ -42,7 +41,7 @@ const appointmentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Appointment Successfull","Date Change Requested","Pending", "Accepted", "Completed"],
+    enum: ["Appointment Successfull","Date Change Requested","Pending", "Accepted", "Completed","In Progress"],
     default: "Pending",
   },
   createdAt: {

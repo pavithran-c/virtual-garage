@@ -23,8 +23,8 @@ const Dashboard = () => {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const initialServices = queryParams.get("services")?.split(",").map(decodeURIComponent) || [];
-  const [appointments, setAppointments] = useState([]); // Active appointments (Pending/Accepted)
-  const [recentOrders, setRecentOrders] = useState([]); // Completed appointments
+  const [appointments, setAppointments] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
   const [isAppointmentFormOpen, setIsAppointmentFormOpen] = useState(!!initialServices.length);
   const [appointmentForm, setAppointmentForm] = useState({
     services: initialServices,
@@ -33,6 +33,7 @@ const Dashboard = () => {
     number: "",
     phone: "",
     serviceOption: "Pick Up & Delivery",
+    status: "Pending",
   });
   const [phoneError, setPhoneError] = useState("");
   const [editingAppointment, setEditingAppointment] = useState(null);
@@ -69,7 +70,6 @@ const Dashboard = () => {
       try {
         const response = await axios.get(`${API_URL}/appointments`, { withCredentials: true });
         const allAppointments = response.data;
-        // Split into active appointments and recent orders based on status
         const activeAppointments = allAppointments.filter(
           (appt) => appt.status !== "Completed"
         );
@@ -201,6 +201,13 @@ const Dashboard = () => {
     return appointments.filter((appt) => appt.date === date).length;
   };
 
+  const isDuplicateAppointment = (newAppt) => {
+    return appointments.some((appt) => {
+      const sameNumber = appt.number === newAppt.number;
+      return sameNumber && appt.status !== "Completed";
+    });
+  };
+
   const handleAppointmentSubmit = async (e) => {
     e.preventDefault();
     if (
@@ -217,6 +224,10 @@ const Dashboard = () => {
       setPhoneError("Phone number must be in format: +919876543210 or 9876543210 or 9876543210");
       return;
     }
+    if (!editingAppointment && isDuplicateAppointment(appointmentForm)) {
+      setError("An active appointment already exists for this vehicle.");
+      return;
+    }
     try {
       const response = editingAppointment
         ? await axios.put(`${API_URL}/appointments/${editingAppointment._id}`, appointmentForm, {
@@ -224,7 +235,7 @@ const Dashboard = () => {
           })
         : await axios.post(`${API_URL}/appointments`, appointmentForm, { withCredentials: true });
 
-      const updatedAppointment = response.data.appointment || response.data; // Handle response structure
+      const updatedAppointment = response.data.appointment || response.data;
       if (editingAppointment) {
         if (updatedAppointment.status === "Completed") {
           setAppointments(
@@ -249,6 +260,7 @@ const Dashboard = () => {
         number: "",
         phone: "",
         serviceOption: "Pick Up & Delivery",
+        status: "Pending",
       });
       setIsAppointmentFormOpen(false);
       setError("");
@@ -271,6 +283,7 @@ const Dashboard = () => {
       number: appointment.number,
       phone: appointment.phone || "",
       serviceOption: appointment.serviceOption || "Pick Up & Delivery",
+      status: appointment.status || "Pending",
     });
     setIsAppointmentFormOpen(true);
   };
@@ -543,6 +556,7 @@ const Dashboard = () => {
                 number: "",
                 phone: "",
                 serviceOption: "Pick Up & Delivery",
+                status: "Pending",
               });
               setIsAppointmentFormOpen(true);
               setSearchTerm("");
@@ -594,18 +608,22 @@ const Dashboard = () => {
                     </span>
                   </td>
                   <td className="p-3">
-                    <button
-                      onClick={() => handleEditAppointment(appointment)}
-                      className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition mr-2"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteAppointment(appointment._id)}
-                      className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
-                    >
-                      Delete
-                    </button>
+                    {appointment.status === "Pending" && (
+                      <>
+                        <button
+                          onClick={() => handleEditAppointment(appointment)}
+                          className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition mr-2"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAppointment(appointment._id)}
+                          className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -817,6 +835,22 @@ const Dashboard = () => {
                     ))}
                   </div>
                 </div>
+                {editingAppointment && (
+                  <div className="flex flex-col">
+                    <label className="text-gray-700 font-semibold mb-2">Status</label>
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-sm ${
+                        appointmentForm.status === "Pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : appointmentForm.status === "Accepted"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {appointmentForm.status || "Pending"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                   <button
                     type="button"
