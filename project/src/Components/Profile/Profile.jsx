@@ -24,23 +24,40 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-// Assuming Poppins font is here
+import "./Profile.css";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const Profile = () => {
-  const { user, logout } = useContext(AuthContext); // User data from AuthContext
+  const { user, logout } = useContext(AuthContext);
   const [vehicles, setVehicles] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ username: "", email: "" });
+  const [editForm, setEditForm] = useState({ username: "", email: "" ,createdAt:""});
   const [activityLog, setActivityLog] = useState([]);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
+  const [details, setdetails]=useState({Authetication:"",createdAt:"",picture:""});
+  // Bubble effect: Track cursor movement
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const bubbles = document.querySelectorAll(".bubble");
+      bubbles.forEach((bubble, index) => {
+        const speed = (index + 1) * 0.02;
+        const x = e.clientX * speed;
+        const y = e.clientY * speed;
+        bubble.style.transform = `translate(${x}px, ${y}px)`;
+      });
+    };
 
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
+  // Fetch profile data
   useEffect(() => {
     const fetchProfileData = async () => {
       if (!user) {
@@ -51,18 +68,26 @@ const Profile = () => {
 
       setLoading(true);
       try {
-        // Use user data from AuthContext instead of fetching /api/user/me
-        setEditForm({ username: user.username, email: user.email });
-
+        // Fetch user profile from API to ensure accurate data
+        const userResponse = await axios.get(`${API_URL}/user/me`, {
+          withCredentials: true,
+        });
+        const userData = userResponse.data.user;
+        setEditForm({ username: userData.username, email: userData.email });
+        setdetails({Authetication:userData.authType,createdAt:userData.createdAt,picture:userData.picture});
         // Fetch vehicles
-        const vehiclesResponse = await axios.get(`${API_URL}/vehicles`, { withCredentials: true });
+        const vehiclesResponse = await axios.get(`${API_URL}/vehicles`, {
+          withCredentials: true,
+        });
         setVehicles(vehiclesResponse.data);
 
         // Fetch appointments
-        const appointmentsResponse = await axios.get(`${API_URL}/appointments`, { withCredentials: true });
+        const appointmentsResponse = await axios.get(`${API_URL}/appointments`, {
+          withCredentials: true,
+        });
         setAppointments(appointmentsResponse.data);
 
-        // Simulate activity log from vehicles and appointments
+        // Generate activity log
         const activities = [
           ...vehiclesResponse.data.map((v) => ({
             type: "Vehicle Added",
@@ -94,20 +119,32 @@ const Profile = () => {
     setEditForm({ ...editForm, [name]: value });
   };
 
-  // Note: No save functionality since PUT /api/user/me isn’t available
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    // Since backend doesn’t support updating profile, just simulate it locally
-    console.warn("Profile update not implemented in backend. Simulating locally.");
-    setIsEditing(false);
-    setActivityLog([
-      {
-        type: "Profile Updated",
-        description: "Updated username or email (local simulation)",
-        timestamp: new Date().toISOString(),
-      },
-      ...activityLog,
-    ]);
+    try {
+      const response = await axios.put(
+        `${API_URL}/user/me`,
+        editForm,
+        { withCredentials: true }
+      );
+      setEditForm({
+        username: response.data.user.username,
+        email: response.data.user.email,
+        createdAt: response.data.user.createdAt
+      });
+      setActivityLog([
+        {
+          type: "Profile Updated",
+          description: "Updated username or email",
+          timestamp: new Date().toISOString(),
+        },
+        ...activityLog,
+      ]);
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Error updating profile:", err.response || err);
+      setError(err.response?.data?.message || "Failed to update profile");
+    }
   };
 
   const chartData = {
@@ -127,17 +164,31 @@ const Profile = () => {
     responsive: true,
     plugins: {
       legend: { position: "top" },
-      title: { display: true, text: "Appointment Activity", font: { family: "Poppins", size: 18 } },
+      title: {
+        display: true,
+        text: "Appointment Activity",
+        font: { family: "Poppins", size: 18 },
+      },
     },
     scales: {
       x: { title: { display: true, text: "Date" } },
-      y: { title: { display: true, text: "Number of Appointments" }, beginAtZero: true },
+      y: {
+        title: { display: true, text: "Number of Appointments" },
+        beginAtZero: true,
+      },
     },
+  };
+
+  // Validate and format createdAt date
+  const formatCreatedAt = (createdAt) => {
+    if (!createdAt) return "Unknown";
+    const date = new Date(createdAt);
+    return isNaN(date.getTime()) ? "Unknown" : date.toLocaleDateString();
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="profile-page flex items-center justify-center">
         <p className="text-gray-700 text-lg">Loading profile...</p>
       </div>
     );
@@ -145,7 +196,7 @@ const Profile = () => {
 
   if (!user || error) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="profile-page flex items-center justify-center">
         <motion.div
           className="p-6 bg-red-100 text-red-700 rounded-lg shadow-md"
           initial={{ opacity: 0 }}
@@ -159,7 +210,13 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="profile-page">
+      {/* Bubble background */}
+      <div className="bubble"></div>
+      <div className="bubble"></div>
+      <div className="bubble"></div>
+      <div className="bubble"></div>
+      <div className="bubble"></div>
       <motion.div
         className="max-w-5xl mx-auto"
         initial={{ opacity: 0, y: -20 }}
@@ -170,16 +227,16 @@ const Profile = () => {
         <div className="bg-gradient-to-r from-teal-600 to-teal-800 text-white p-6 rounded-xl shadow-lg mb-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
             <img
-              src={user.picture || "https://via.placeholder.com/100"}
+              src={details.picture}
               alt="Profile"
               className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-md"
             />
             <div className="text-center sm:text-left">
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                {user.username}'s Profile
+                {editForm.username}'s Profile
               </h1>
               <p className="text-sm md:text-base mt-2 opacity-90">
-                {user.authType === "google" ? "Google Account" : "Local Account"}
+                {details.Authetication === "google" ? "Google Account" : "Local Account"}
               </p>
             </div>
           </div>
@@ -205,7 +262,9 @@ const Profile = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl md:text-2xl font-semibold text-teal-800">Profile Details</h2>
+            <h2 className="text-xl md:text-2xl font-semibold text-teal-800">
+              Profile Details
+            </h2>
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
@@ -234,23 +293,28 @@ const Profile = () => {
             {!isEditing ? (
               <>
                 <p className="flex items-center text-gray-700">
-                  <FaUser className="mr-2 text-teal-600" /> <strong>Username:</strong> {user.username}
+                  <FaUser className="mr-2 text-teal-600" /> <strong>Username:</strong>{" "}
+                  {editForm.username}
                 </p>
                 <p className="flex items-center text-gray-700">
-                  <FaEnvelope className="mr-2 text-teal-600" /> <strong>Email:</strong> {user.email}
+                  <FaEnvelope className="mr-2 text-teal-600" /> <strong>Email:</strong>{" "}
+                  {editForm.email}
                 </p>
                 <p className="text-gray-700">
-                  <strong>Account Created:</strong>{" "}
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  <strong>Account Created:</strong> {formatCreatedAt(details.createdAt)}
                 </p>
                 <p className="text-gray-700">
-                  <strong>Authentication:</strong> {user.authType === "google" ? "Google" : "Local"}
+                  <strong>Authentication:</strong>{" "}
+                  {details.Authetication === "google" ? "Google" : "Local"}
                 </p>
               </>
             ) : (
               <form onSubmit={handleSaveProfile} className="space-y-4">
                 <div>
-                  <label htmlFor="username" className="block text-gray-700 font-medium mb-1">
+                  <label
+                    htmlFor="username"
+                    className="block text-gray-700 font-medium mb-1"
+                  >
                     Username
                   </label>
                   <input
@@ -264,7 +328,10 @@ const Profile = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-gray-700 font-medium mb-1">
+                  <label
+                    htmlFor="email"
+                    className="block text-gray-700 font-medium mb-1"
+                  >
                     Email
                   </label>
                   <input
@@ -280,11 +347,6 @@ const Profile = () => {
               </form>
             )}
           </div>
-          {isEditing && (
-            <p className="text-yellow-600 text-sm mt-2">
-              Note: Profile updates are not saved to the server due to missing backend support.
-            </p>
-          )}
         </motion.div>
 
         {/* Quick Stats */}
@@ -298,7 +360,9 @@ const Profile = () => {
             <FaCar className="text-teal-600 text-3xl md:text-4xl" />
             <div>
               <p className="text-gray-600 text-sm md:text-base">Vehicles</p>
-              <h3 className="text-xl md:text-2xl font-bold text-gray-800">{vehicles.length}</h3>
+              <h3 className="text-xl md:text-2xl font-bold text-gray-800">
+                {vehicles.length}
+              </h3>
             </div>
             <span className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-500">
               Total registered vehicles
@@ -308,7 +372,9 @@ const Profile = () => {
             <FaCalendarAlt className="text-emerald-600 text-3xl md:text-4xl" />
             <div>
               <p className="text-gray-600 text-sm md:text-base">Appointments</p>
-              <h3 className="text-xl md:text-2xl font-bold text-gray-800">{appointments.length}</h3>
+              <h3 className="text-xl md:text-2xl font-bold text-gray-800">
+                {appointments.length}
+              </h3>
             </div>
             <span className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-gray-500">
               Total scheduled appointments
@@ -350,7 +416,9 @@ const Profile = () => {
                   activityLog.map((activity, index) => (
                     <div key={index} className="border-b pb-2">
                       <p className="text-gray-800 font-medium">{activity.type}</p>
-                      <p className="text-gray-600 text-sm">{activity.description}</p>
+                      <p className="text-gray-600 text-sm">
+                        {activity.description}
+                      </p>
                       <p className="text-gray-500 text-xs">
                         {new Date(activity.timestamp).toLocaleString()}
                       </p>

@@ -3,7 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const adminAppointmentRoutes = require("./Routes/Admin-Appointment");
-
+const Employee=require("../admin-backend/Routes/Admin-Employee")
 const app = express();
 
 // Middleware
@@ -32,7 +32,7 @@ connectWithRetry();
 
 // Routes (no admin authentication)
 app.use("/api/admin/appointments", adminAppointmentRoutes);
-
+app.use("/api/employees",Employee);
 // Start server
 const PORT = process.env.PORT;
 const server = app.listen(PORT, () => console.log(`🚀 Admin server running on port ${PORT}`));

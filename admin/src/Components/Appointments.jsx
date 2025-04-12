@@ -1,208 +1,336 @@
-import { useState } from "react";
-import ServiceProgressInput from "./ServiceProgressInput"; // Adjust the import path as needed
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { motion } from "framer-motion";
+import { FaPlus } from "react-icons/fa";
 
-const AdminPortal = () => {
-  const [appointments, setAppointments] = useState([
-    {
-      id: 1,
-      name: "John Doe",
-      service: "Haircut",
-      date: "2025-03-25",
-      accepted: false,
-      changeRequested: false,
-      changeReason: null,
-      progress: null,
-    },
-    {
-      id: 2,
-      name: "Jane Smith",
-      service: "Massage",
-      date: "2025-03-26",
-      accepted: false,
-      changeRequested: false,
-      changeReason: null,
-      progress: null,
-    },
-    {
-      id: 3,
-      name: "Alex Brown",
-      service: "Manicure",
-      date: "2025-03-27",
-      accepted: false,
-      changeRequested: false,
-      changeReason: null,
-      progress: null,
-    },
-  ]);
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
-  const reasons = [
-    "Employee Shortage",
-    "Workshop Holiday",
-    "Equipment Maintenance",
-    "Unexpected Closure",
-  ];
+const EmployeeSalaryDeduction = () => {
+  const [employees, setEmployees] = useState([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [employee, setEmployee] = useState(null);
+  const [deductions, setDeductions] = useState([]);
+  const [netSalaryData, setNetSalaryData] = useState({
+    baseSalary: 0,
+    totalDeductions: 0,
+    netSalary: 0,
+  });
+  const [form, setForm] = useState({
+    amount: "",
+    reason: "",
+    date: new Date().toISOString().split("T")[0],
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleAccept = (id) => {
-    setAppointments(
-      appointments.map((appointment) =>
-        appointment.id === id
-          ? {
-              ...appointment,
-              accepted: true,
-              progress: appointment.progress || { percentage: 0, note: "Service started" }, // Initialize to 0% if no prior progress
-            }
-          : appointment
-      )
-    );
-  };
+  // Fetch all employees on mount
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/employees`, {
+          withCredentials: true,
+        });
+        setEmployees(response.data.employees);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to load employees");
+        console.error("Fetch employees error:", err);
+      }
+    };
+    fetchEmployees();
+  }, []);
 
-  const handleRequestDateChange = (id, reason) => {
-    if (!reason || reason === "") {
-      alert("Please select a reason before requesting a date change.");
+  // Fetch employee data when selectedEmployeeId changes
+  useEffect(() => {
+    if (!selectedEmployeeId) {
+      setEmployee(null);
+      setDeductions([]);
+      setNetSalaryData({ baseSalary: 0, totalDeductions: 0, netSalary: 0 });
       return;
     }
-    setAppointments(
-      appointments.map((appointment) =>
-        appointment.id === id
-          ? { ...appointment, changeRequested: true, changeReason: reason }
-          : appointment
-      )
-    );
-    alert(
-      `Requested ${appointments.find((a) => a.id === id).name} to change their appointment date. Reason: ${reason}`
-    );
+
+    const fetchEmployeeData = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const [employeeResponse, deductionsResponse, netSalaryResponse] =
+          await Promise.all([
+            axios.get(`${API_URL}/employees/${selectedEmployeeId}`, {
+              withCredentials: true,
+            }),
+            axios.get(`${API_URL}/employees/${selectedEmployeeId}/deductions`, {
+              withCredentials: true,
+            }),
+            axios.get(`${API_URL}/employees/${selectedEmployeeId}/net-salary`, {
+              withCredentials: true,
+            }),
+          ]);
+
+        setEmployee(employeeResponse.data.employee);
+        setDeductions(deductionsResponse.data.deductions);
+        setNetSalaryData(netSalaryResponse.data);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to fetch employee data");
+        setEmployee(null);
+        setDeductions([]);
+        setNetSalaryData({ baseSalary: 0, totalDeductions: 0, netSalary: 0 });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployeeData();
+  }, [selectedEmployeeId]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setForm({
+      ...form,
+      [name]: name === "amount" ? Number(value) : value,
+    });
   };
 
-  const handleProgressUpdate = (id, progressUpdate) => {
-    setAppointments(
-      appointments.map((appointment) =>
-        appointment.id === id
-          ? { ...appointment, progress: progressUpdate }
-          : appointment
-      )
-    );
-    alert(
-      `Progress update sent to ${appointments.find((a) => a.id === id).name}: ${progressUpdate.percentage}% - ${progressUpdate.note}`
-    );
+  const handleDeduct = async (e) => {
+    e.preventDefault();
+    if (!employee) {
+      setError("Please select an employee");
+      return;
+    }
+
+    // Client-side validation
+    const newAmount = Number(form.amount);
+    if (newAmount + netSalaryData.totalDeductions > netSalaryData.baseSalary) {
+      setError("Total deductions cannot exceed employee salary");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      await axios.post(
+        `${API_URL}/employees/${employee._id}/deductions`,
+        form,
+        { withCredentials: true }
+      );
+
+      // Refresh data
+      const [deductionsResponse, netSalaryResponse] = await Promise.all([
+        axios.get(`${API_URL}/employees/${employee._id}/deductions`, {
+          withCredentials: true,
+        }),
+        axios.get(`${API_URL}/employees/${employee._id}/net-salary`, {
+          withCredentials: true,
+        }),
+      ]);
+
+      setDeductions(deductionsResponse.data.deductions);
+      setNetSalaryData(netSalaryResponse.data);
+      setForm({
+        amount: "",
+        reason: "",
+        date: new Date().toISOString().split("T")[0],
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to add deduction");
+      console.error("Deduction error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-12">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100">
-        <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-8 tracking-tight text-center sm:text-left">
-          Appointment Management Dashboard
+    <div className="min-h-screen bg-gray-100 flex items-start justify-center p-4 sm:p-6 font-poppins">
+      <motion.div
+        className="w-full max-w-5xl"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h1 className="text-3xl font-bold text-teal-800 mb-6">
+          Employee Salary Deduction
         </h1>
 
-        {appointments.length === 0 ? (
-          <p className="text-gray-500 text-center text-sm sm:text-base py-8">
-            No appointments available at this time.
-          </p>
-        ) : (
-          <div className="space-y-6">
-            {appointments.map((appointment) => (
-              <div
-                key={appointment.id}
-                className="flex flex-col sm:flex-row sm:items-start justify-between p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
-              >
-                <div className="flex-1 mb-4 sm:mb-0">
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
-                    {appointment.name}
-                  </h3>
-                  <div className="mt-2 space-y-1">
-                    <p className="text-gray-700 text-sm sm:text-base">
-                      <span className="font-medium text-gray-900">Service:</span>{" "}
-                      {appointment.service}
-                    </p>
-                    <p className="text-gray-700 text-sm sm:text-base">
-                      <span className="font-medium text-gray-900">Date:</span>{" "}
-                      {appointment.date}
-                    </p>
-                    {appointment.changeRequested && !appointment.accepted && (
-                      <p className="text-orange-600 text-sm sm:text-base mt-2 flex items-center">
-                        <span className="font-medium">Status:</span>{" "}
-                        <span className="ml-1 bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs sm:text-sm">
-                          Change Requested
-                          {appointment.changeReason && (
-                            <span>
-                              {" - "}
-                              <span className="italic">
-                                {appointment.changeReason}
-                              </span>
-                            </span>
-                          )}
-                        </span>
-                      </p>
-                    )}
-                    {appointment.accepted && appointment.progress && (
-                      <div className="mt-2">
-                        <p className="text-blue-600 text-sm sm:text-base flex items-center">
-                          <span className="font-medium">Progress:</span>{" "}
-                          <span className="ml-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs sm:text-sm">
-                            {appointment.progress.percentage}%
-                          </span>
-                        </p>
-                        <p className="text-gray-600 text-sm sm:text-base mt-1">
-                          <span className="font-medium">Note:</span>{" "}
-                          {appointment.progress.note}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <ServiceProgressInput
-                    appointmentId={appointment.id}
-                    onProgressUpdate={handleProgressUpdate}
-                  />
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                  {!appointment.accepted && !appointment.changeRequested && (
-                    <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                      <select
-                        id={`reason-${appointment.id}`}
-                        defaultValue=""
-                        className="w-full sm:w-48 p-2 bg-gray-50 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-200"
-                      >
-                        <option value="" disabled>
-                          Select Reason
-                        </option>
-                        {reasons.map((reason) => (
-                          <option key={reason} value={reason}>
-                            {reason}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={() =>
-                          handleRequestDateChange(
-                            appointment.id,
-                            document.getElementById(`reason-${appointment.id}`)
-                              .value
-                          )
-                        }
-                        className="w-full sm:w-auto px-4 py-2 bg-orange-600 text-white rounded-lg font-medium text-sm sm:text-base hover:bg-orange-700 focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition duration-300 shadow-sm"
-                      >
-                        Request Change
-                      </button>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => handleAccept(appointment.id)}
-                    disabled={appointment.accepted}
-                    className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium text-sm sm:text-base transition duration-300 shadow-sm ${
-                      appointment.accepted
-                        ? "bg-green-600 text-white cursor-not-allowed opacity-60 hover:bg-green-600"
-                        : "bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    }`}
-                  >
-                    {appointment.accepted ? "Accepted" : "Accept"}
-                  </button>
-                </div>
-              </div>
+        {/* Employee Selection */}
+        <div className="bg-white p-6 rounded-xl shadow-md mb-6">
+          <label className="block text-gray-700 font-medium mb-2">
+            Select Employee
+          </label>
+          <select
+            value={selectedEmployeeId}
+            onChange={(e) => setSelectedEmployeeId(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:bg-gray-200"
+            disabled={loading}
+          >
+            <option value="">-- Select an Employee --</option>
+            {employees.map((emp) => (
+              <option key={emp._id} value={emp._id}>
+                {emp.name}
+              </option>
             ))}
+          </select>
+        </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg">
+            {error}
           </div>
         )}
-      </div>
+
+        {loading && (
+          <div className="mb-6 flex justify-center">
+            <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+
+        {employee && !loading && (
+          <>
+            {/* Employee Details */}
+            <div className="bg-white p-6 rounded-xl shadow-md mb-6">
+              <h2 className="text-xl font-semibold text-teal-800 mb-4">
+                Employee Details
+              </h2>
+              <div className="space-y-2">
+                <p className="text-gray-600">
+                  <span className="font-medium">Name:</span> {employee.name}
+                </p>
+                <p className="text-gray-600">
+                  <span className="font-medium">Email:</span> {employee.email}
+                </p>
+                <p className="text-gray-600">
+                  <span className="font-medium">Role:</span> {employee.role}
+                </p>
+                <p className="text-gray-600">
+                  <span className="font-medium">Department:</span>{" "}
+                  {employee.department}
+                </p>
+              </div>
+            </div>
+
+            {/* Salary Summary */}
+            <div className="bg-white p-6 rounded-xl shadow-md mb-6">
+              <h2 className="text-xl font-semibold text-teal-800 mb-4">
+                Salary Summary
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-gray-600">Base Salary</p>
+                  <p className="text-lg font-medium">
+                    ₹{netSalaryData.baseSalary.toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Total Deductions</p>
+                  <p className="text-lg font-medium">
+                    ₹{netSalaryData.totalDeductions.toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Net Salary</p>
+                  <p className="text-lg font-medium text-teal-600">
+                    ₹{netSalaryData.netSalary.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Deduction Form */}
+            <form
+              onSubmit={handleDeduct}
+              className="bg-white p-6 rounded-xl shadow-md mb-6"
+            >
+              <h2 className="text-xl font-semibold text-teal-800 mb-4">
+                Add Deduction
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Amount (₹)
+                  </label>
+                  <input
+                    type="number"
+                    name="amount"
+                    value={form.amount}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:bg-gray-200"
+                    required
+                    min="0"
+                    step="1"
+                    max={netSalaryData.baseSalary - netSalaryData.totalDeductions}
+                    disabled={loading}
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Reason
+                  </label>
+                  <input
+                    type="text"
+                    name="reason"
+                    value={form.reason}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:bg-gray-200"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-medium mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    name="reason"
+                    value={form.date}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:bg-gray-200"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="mt-4 bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 flex items-center disabled:bg-teal-400"
+                disabled={loading}
+              >
+                <FaPlus className="mr-2" /> {loading ? "Adding..." : "Add Deduction"}
+              </button>
+            </form>
+
+            {/* Deduction List */}
+            <div className="bg-white p-6 rounded-xl shadow-md">
+              <h2 className="text-xl font-semibold text-teal-800 mb-4">
+                Deductions
+              </h2>
+              {deductions.length === 0 ? (
+                <p className="text-gray-600">No deductions recorded.</p>
+              ) : (
+                <div className="space-y-4">
+                  {deductions.map((deduction) => (
+                    <div
+                      key={deduction._id}
+                      className="flex justify-between items-center border-b border-gray-200 py-2"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          ₹{deduction.amount.toLocaleString()}
+                        </p>
+                        <p className="text-sm text-gray-600">{deduction.reason}</p>
+                        <p className="text-sm text-gray-600">
+                          {new Date(deduction.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </motion.div>
     </div>
   );
 };
 
-export default AdminPortal;
+export default EmployeeSalaryDeduction;

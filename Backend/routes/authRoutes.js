@@ -9,7 +9,6 @@ const router = express.Router();
 
 // Ensure JWT_SECRET is set
 if (!process.env.JWT_SECRET) {
-  console.error('JWT_SECRET is missing in environment variables');
   process.exit(1);
 }
 
@@ -55,7 +54,6 @@ router.post('/google', async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Google auth error:', error.message, error.stack);
     res.status(500).json({ message: 'Server error during Google authentication' });
   }
 });
@@ -89,7 +87,6 @@ router.post('/register', async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Registration error:', error);
     res.status(500).json({ message: 'Server error during registration' });
   }
 });
@@ -125,7 +122,6 @@ router.post('/login', loginLimiter, async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Login error:', error);
     res.status(500).json({ message: 'Server error during login' });
   }
 });

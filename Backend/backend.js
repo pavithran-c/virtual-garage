@@ -8,7 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const vehicleRoutes = require('./routes/vehicleroutes');
 const appointmentRoutes = require('./routes/appointments');
 const aiRoutes = require('./routes/aiRoutes'); // Import AI routes
-
+const user=require('./routes/user');
 const app = express();
 
 // Middleware
@@ -56,7 +56,6 @@ const authMiddleware = (req, res, next) => {
       _id: decoded._id,
       username: decoded.username,
     };
-    console.log('Authenticated user:', req.user);
     next();
   } catch (error) {
     console.error('JWT verification error:', error);
@@ -69,6 +68,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', authMiddleware, vehicleRoutes);
 app.use('/api/appointments', authMiddleware, appointmentRoutes);
 app.use('/api', aiRoutes); // Mount AI routes under /api
+app.use("/api/user", user);
 
 // Start server
 const PORT = process.env.PORT || 5000;
