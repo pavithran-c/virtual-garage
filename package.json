@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "framer-motion": "^12.6.0",
-    "lucide-react": "^0.484.0",
-    "react-responsive-carousel": "^3.2.23"
-  }
-}
