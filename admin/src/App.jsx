@@ -1,19 +1,43 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg';
-import './App.css';
-import AddEmployee from './Components/Employee';
-import AdminEmployeeManagement from './Components/ServiceProgressInput';
-import SalaryDeduction from './Components/Appointments';
+import React from "react";
+import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
+import Navbar from "./Components/Navbar";
+import EmployeeSalaryDeduction from "./Components/EmployeeSalaryDeduction";
+import AdminEmployeeManagement from "./Components/AdminEmployeeManagement";
+import Employee from "./Components/Employee";
 
-function App() {
-  const [count, setCount] = useState(0)
+// Layout with Navbar
+const Layout = () => (
+  <div className="font-poppins min-h-screen bg-gray-100">
+    <Navbar />
+    <main className="p-4 sm:p-6">
+      <Outlet />
+    </main>
+  </div>
+);
 
-  return (
-    <>
-      <SalaryDeduction/>
-    </>
-  )
-}
+const App = () => {
+  const router = createBrowserRouter([
+    {
+      element: <Layout />,
+      children: [
+        {
+          path: "/",
+          element: <Employee />,
+        },
+        {
+          path: "/employee",
+          element: <AdminEmployeeManagement />,
+        },
+        {
+          path: "/deduction",
+          element: <EmployeeSalaryDeduction />,
+        },
+        
+      ],
+    },
+  ]);
 
-export default App
+  return <RouterProvider router={router} />;
+};
+
+export default App;
