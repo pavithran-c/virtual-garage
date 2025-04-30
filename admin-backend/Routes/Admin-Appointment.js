@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Appointment = require("../Models/Appointment");
-
+const User = require("../Models/User");
 // Middleware to check admin authentication (assuming Basic Auth as per frontend)
 const authAdmin = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -14,12 +14,12 @@ const authAdmin = (req, res, next) => {
 // GET all appointments
 router.get("/", authAdmin, async (req, res) => {
   try {
-    const appointments = await Appointment.find().sort({ createdAt: -1 });
+    const appointments = await Appointment.find().sort({ createdAt: -1 }).populate('user','username');
 
     const formattedAppointments = appointments.map((appt) => ({
       _id: appt._id.toString(),
       user: appt.user.toString(), // Return user ID as string (ObjectId)
-      username: appt.username || appt.user.toString(), // Fallback to user ID if username not available
+      username: appt.user.username, // Fallback to user ID if username not available
       services: appt.services,
       date: appt.date,
       time: appt.time,

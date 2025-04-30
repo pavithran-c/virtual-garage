@@ -1,8 +1,8 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import Navbar from "./Components/Navbar";
-import EmployeeSalaryDeduction from "./Components/EmployeeSalaryDeduction";
-import AdminEmployeeManagement from "./Components/AdminEmployeeManagement";
+import EmployeeSalaryDeduction from "./Components/EmployeeManagement/EmployeeSalaryDeduction";
+import AdminEmployeeManagement from "./Components/EmployeeManagement/AdminEmployeeManagement";
 import Employee from "./Components/Employee";
 
 // Layout with Navbar

@@ -4,12 +4,15 @@ import { motion } from "framer-motion";
 import { FaUserPlus, FaEdit, FaTrash } from "react-icons/fa";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const phoneRegex = /^[6-9]\d{9}$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const AdminEmployeeManagement = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
+    employeeId: "",
     name: "",
     email: "",
     role: "technician",
@@ -19,6 +22,7 @@ const AdminEmployeeManagement = () => {
     salary: "",
   });
   const [editingId, setEditingId] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     fetchEmployees();
@@ -42,8 +46,29 @@ const AdminEmployeeManagement = () => {
     setForm({ ...form, [name]: name === "salary" ? Number(value) : value });
   };
 
+  const validateForm = () => {
+    const errors = {};
+    if (!form.employeeId.trim()) errors.employeeId = "Employee ID is required";
+    if (!form.name.trim()) errors.name = "Name is required";
+    if (!form.email.trim()) errors.email = "Email is required";
+    else if (!emailRegex.test(form.email)) errors.email = "Invalid email address";
+    if (!form.role) errors.role = "Role is required";
+    if (!form.department.trim()) errors.department = "Department is required";
+    if (form.phone && !phoneRegex.test(form.phone)) errors.phone = "Invalid Indian phone number";
+    if (!form.status) errors.status = "Status is required";
+    if (!form.salary && form.salary !== 0) errors.salary = "Salary is required";
+    else if (isNaN(form.salary)) errors.salary = "Salary must be a number";
+    else if (form.salary < 10000 || form.salary > 50000)
+      errors.salary = "Salary must be between ₹10,000 and ₹50,000";
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errors = validateForm();
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     try {
       if (editingId) {
         await axios.put(`${API_URL}/employees/${editingId}`, form, {
@@ -53,6 +78,7 @@ const AdminEmployeeManagement = () => {
         await axios.post(`${API_URL}/employees`, form, { withCredentials: true });
       }
       setForm({
+        employeeId: "",
         name: "",
         email: "",
         role: "technician",
@@ -62,6 +88,7 @@ const AdminEmployeeManagement = () => {
         salary: "",
       });
       setEditingId(null);
+      setFormErrors({});
       fetchEmployees();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to save employee");
@@ -70,6 +97,7 @@ const AdminEmployeeManagement = () => {
 
   const handleEdit = (employee) => {
     setForm({
+      employeeId: employee.employeeId,
       name: employee.name,
       email: employee.email,
       role: employee.role,
@@ -117,6 +145,23 @@ const AdminEmployeeManagement = () => {
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
+              <label className="block text-gray-700 font-medium mb-1">Employee ID</label>
+              <input
+                type="text"
+                name="employeeId"
+                value={form.employeeId}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                required
+                pattern="^[A-Za-z0-9_-]+$"
+                title="Employee ID must be alphanumeric"
+                disabled={!!editingId}
+              />
+              {formErrors.employeeId && (
+                <div className="text-red-600 text-sm">{formErrors.employeeId}</div>
+              )}
+            </div>
+            <div>
               <label className="block text-gray-700 font-medium mb-1">Name</label>
               <input
                 type="text"
@@ -126,6 +171,9 @@ const AdminEmployeeManagement = () => {
                 className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 required
               />
+              {formErrors.name && (
+                <div className="text-red-600 text-sm">{formErrors.name}</div>
+              )}
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Email</label>
@@ -137,6 +185,9 @@ const AdminEmployeeManagement = () => {
                 className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 required
               />
+              {formErrors.email && (
+                <div className="text-red-600 text-sm">{formErrors.email}</div>
+              )}
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Role</label>
@@ -151,6 +202,9 @@ const AdminEmployeeManagement = () => {
                 <option value="support">Support</option>
                 <option value="other">Other</option>
               </select>
+              {formErrors.role && (
+                <div className="text-red-600 text-sm">{formErrors.role}</div>
+              )}
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Department</label>
@@ -162,6 +216,9 @@ const AdminEmployeeManagement = () => {
                 className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 required
               />
+              {formErrors.department && (
+                <div className="text-red-600 text-sm">{formErrors.department}</div>
+              )}
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Phone</label>
@@ -171,7 +228,13 @@ const AdminEmployeeManagement = () => {
                 value={form.phone}
                 onChange={handleInputChange}
                 className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                maxLength={10}
+                pattern="[6-9]{1}[0-9]{9}"
+                title="Enter a valid 10-digit Indian phone number"
               />
+              {formErrors.phone && (
+                <div className="text-red-600 text-sm">{formErrors.phone}</div>
+              )}
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Status</label>
@@ -184,6 +247,9 @@ const AdminEmployeeManagement = () => {
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
+              {formErrors.status && (
+                <div className="text-red-600 text-sm">{formErrors.status}</div>
+              )}
             </div>
             <div>
               <label className="block text-gray-700 font-medium mb-1">Salary (Monthly)</label>
@@ -194,9 +260,13 @@ const AdminEmployeeManagement = () => {
                 onChange={handleInputChange}
                 className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                 required
-                min="1000"
+                min="10000"
+                max="50000"
                 step="1"
               />
+              {formErrors.salary && (
+                <div className="text-red-600 text-sm">{formErrors.salary}</div>
+              )}
             </div>
           </div>
           <button

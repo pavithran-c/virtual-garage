@@ -14,7 +14,13 @@ const employeeSchema = new mongoose.Schema({
     lowercase: true,
     match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
   },
- role: {
+  employeeId: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+  },
+  role: {
     type: String,
     enum: ["manager", "technician", "support", "other"],
     default: "technician",

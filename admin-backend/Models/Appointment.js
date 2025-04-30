@@ -50,6 +50,11 @@ const appointmentSchema = new mongoose.Schema({
   },
   changeRequested: { type: Boolean, default: false },
   changeReason: { type: String, default: null },
+  assignedEmployee : {type: mongoose.Schema.Types.ObjectId, ref: "Employee"},
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = mongoose.model("Appointment", appointmentSchema);

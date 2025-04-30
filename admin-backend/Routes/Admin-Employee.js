@@ -96,6 +96,91 @@ router.post(
   }
 );
 
+// POST /api/employees - Add new employee
+router.post("/", async (req, res) => {
+  try {
+    const { employeeId, name, email, role, department, phone, status, salary } = req.body;
+    if (
+      !employeeId ||
+      !name ||
+      !email ||
+      !role ||
+      !department ||
+      !status ||
+      !salary
+    )
+      return res.status(400).json({ message: "All required fields must be provided" });
+
+    // Check for unique employeeId
+    const exists = await Employee.findOne({ employeeId });
+    if (exists)
+      return res.status(400).json({ message: "Employee ID already exists" });
+
+    const employee = new Employee({
+      employeeId,
+      name,
+      email,
+      role,
+      department,
+      phone,
+      status,
+      salary,
+    });
+    await employee.save();
+    res.status(201).json({ employee });
+  } catch (error) {
+    console.error("Error adding employee:", error.message, error.stack);
+    res.status(500).json({ message: "Server error while adding employee" });
+  }
+});
+
+// PUT /api/employees/:id - Update employee
+router.put("/:id", async (req, res) => {
+  try {
+    const { employeeId, name, email, role, department, phone, status, salary } = req.body;
+    if (
+      !employeeId ||
+      !name ||
+      !email ||
+      !role ||
+      !department ||
+      !status ||
+      !salary
+    )
+      return res.status(400).json({ message: "All required fields must be provided" });
+
+    // Check for unique employeeId (excluding current employee)
+    const exists = await Employee.findOne({ employeeId, _id: { $ne: req.params.id } });
+    if (exists)
+      return res.status(400).json({ message: "Employee ID already exists" });
+
+    const employee = await Employee.findByIdAndUpdate(
+      req.params.id,
+      { employeeId, name, email, role, department, phone, status, salary },
+      { new: true }
+    );
+    if (!employee)
+      return res.status(404).json({ message: "Employee not found" });
+    res.json({ employee });
+  } catch (error) {
+    console.error("Error updating employee:", error.message, error.stack);
+    res.status(500).json({ message: "Server error while updating employee" });
+  }
+});
+
+// DELETE /api/employees/:id - Delete employee
+router.delete("/:id", async (req, res) => {
+  try {
+    const employee = await Employee.findByIdAndDelete(req.params.id);
+    if (!employee)
+      return res.status(404).json({ message: "Employee not found" });
+    res.json({ message: "Employee deleted" });
+  } catch (error) {
+    console.error("Error deleting employee:", error.message, error.stack);
+    res.status(500).json({ message: "Server error while deleting employee" });
+  }
+});
+
 // GET /api/employees/:id/net-salary - Calculate net salary
 router.get(
   "/:id/net-salary",
