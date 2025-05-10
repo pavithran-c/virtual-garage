@@ -12,6 +12,7 @@ import {
   FaTimes,
   FaHistory,
   FaChartBar,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import { Line } from "react-chartjs-2";
 import {
@@ -41,6 +42,7 @@ const Profile = () => {
   const [activityLog, setActivityLog] = useState([]);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
   const [details, setdetails]=useState({Authetication:"",createdAt:"",picture:""});
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   // Bubble effect: Track cursor movement
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -237,13 +239,47 @@ const Profile = () => {
                 <FaUser className="text-4xl text-gray-400" />
               </div>
             )}
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                {editForm.username}'s Profile
-              </h1>
-              <p className="text-sm md:text-base mt-2 opacity-90">
-                {details.Authetication === "google" ? "Google Account" : "Local Account"}
-              </p>
+            <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between w-full">
+              <div className="flex items-center justify-center sm:justify-start w-full">
+                {/* Logout button to the left of the username */}
+                <div className="text-center sm:text-left">
+                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+                    {editForm.username}'s Profile
+                  </h1>
+                  <p className="text-sm md:text-base mt-2 opacity-90">
+                    {details.Authetication === "google" ? "Google Account" : "Local Account"}
+                  </p>
+                </div>
+              </div>
+              <div className="mr-4">
+                  <button
+                    onClick={() => setShowLogoutConfirm(true)}
+                    className="flex items-center gap-2 bg-gradient-to-r from-red-500 to-red-700 text-white px-4 py-2 rounded-full shadow-lg hover:scale-105 hover:from-red-600 hover:to-red-800 transition-all duration-200 font-semibold"
+                    title="Logout"
+                  >
+                    <FaSignOutAlt className="animate-pulse" size={20} />
+                  </button>
+                </div>
+              {/* Logout confirmation popover */}
+              {showLogoutConfirm && (
+                <div className="absolute left-1/2 -translate-x-1/2 mt-3 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-5 flex flex-col items-center">
+                  <p className="text-gray-800 font-semibold mb-3">Are you sure you want to logout?</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowLogoutConfirm(false)}
+                      className="px-4 py-2 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={logout}
+                      className="px-4 py-2 rounded-full bg-gradient-to-r from-red-500 to-red-700 text-white hover:from-red-600 hover:to-red-800 transition font-semibold"
+                    >
+                      Yes, Logout
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -456,18 +492,12 @@ const Profile = () => {
 
         {/* Logout Button */}
         <motion.div
-          className="text-center"
+          className="text-center mt-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 1 }}
         >
-          <button
-            onClick={logout}
-            className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition"
-          >
-            Logout
-          </button>
-        </motion.div>
+       </motion.div>
       </motion.div>
     </div>
   );
