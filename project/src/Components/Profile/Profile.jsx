@@ -226,11 +226,17 @@ const Profile = () => {
         {/* Header */}
         <div className="bg-gradient-to-r from-teal-600 to-teal-800 text-white p-6 rounded-xl shadow-lg mb-6">
           <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
-            <img
-              src={details.picture}
-              alt="Profile"
-              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-md"
-            />
+            {details.Authetication === "google" && details.picture ? (
+              <img
+                src={details.picture}
+                alt="Profile"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-md object-cover"
+              />
+            ) : (
+              <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center rounded-full border-4 border-white shadow-md bg-gray-200">
+                <FaUser className="text-4xl text-gray-400" />
+              </div>
+            )}
             <div className="text-center sm:text-left">
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
                 {editForm.username}'s Profile

@@ -47,7 +47,7 @@ const Navbar = () => {
   return (
     <>
       <motion.header
-        className={`fixed top-0 left-0 right-0 h-20 z-50 transition-all duration-300 ${theme === "dark" ? "bg-[#12343b]/90" : "bg-[#0d2a32]/80"} backdrop-blur-sm`}
+        className={`fixed top-0 left-0 right-0 h-20 z-50 transition-all duration-300 ${theme === "dark" ? "bg-black/90" : "bg-[#0d2a32]/80"} backdrop-blur-sm`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -103,7 +103,7 @@ const Navbar = () => {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
-            className={`fixed top-20 left-0 right-0 z-40 shadow-lg md:hidden ${theme === "dark" ? "bg-[#12343b]/90" : "bg-[#0d2a32]/80"} backdrop-blur-sm`}
+            className={`fixed top-20 left-0 right-0 z-40 shadow-lg md:hidden ${theme === "dark" ? "bg-black/90" : "bg-[#0d2a32]/80"} backdrop-blur-sm`}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
