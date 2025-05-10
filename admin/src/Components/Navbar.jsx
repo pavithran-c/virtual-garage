@@ -50,6 +50,16 @@ const Navbar = () => {
             >
               Salary Deduction
             </NavLink>
+            <NavLink
+              to="/salary-summary"
+              className={({ isActive }) =>
+                `px-3 py-2 rounded-md text-sm font-medium ${
+                  isActive ? "bg-teal-700" : "hover:bg-teal-700"
+                }`
+              }
+            >
+              Salary Summary
+            </NavLink>
           </div>
 
           {/* Mobile Menu Button */}
@@ -100,6 +110,17 @@ const Navbar = () => {
               onClick={toggleMenu}
             >
               Salary Deduction
+            </NavLink>
+            <NavLink
+              to="/salary-summary"
+              className={({ isActive }) =>
+                `block px-3 py-2 rounded-md text-base font-medium ${
+                  isActive ? "bg-teal-700" : "hover:bg-teal-700"
+                }`
+              }
+              onClick={toggleMenu}
+            >
+              Salary Summary
             </NavLink>
           </div>
         </div>

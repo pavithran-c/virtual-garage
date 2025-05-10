@@ -23,6 +23,16 @@ const EmployeeSalaryDeduction = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Helper to check if a date is in the current month
+  const isCurrentMonth = (dateStr) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    return (
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth()
+    );
+  };
+
   // Fetch all employees on mount
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -67,7 +77,11 @@ const EmployeeSalaryDeduction = () => {
           ]);
 
         setEmployee(employeeResponse.data.employee);
-        setDeductions(deductionsResponse.data.deductions);
+        // Filter deductions for current month only
+        const currentMonthDeductions = deductionsResponse.data.deductions.filter(
+          (d) => isCurrentMonth(d.date)
+        );
+        setDeductions(currentMonthDeductions);
         setNetSalaryData(netSalaryResponse.data);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to fetch employee data");

@@ -3,7 +3,40 @@ const router = express.Router();
 const Employee = require("../Models/Employee");
 const Deduction = require("../Models/Deductions");
 
+router.get("/salary-summaries", async (req, res) => {
+  try {
+    const employees = await Employee.find();
+    const year = parseInt(req.query.year, 10) || new Date().getFullYear();
+    const month = parseInt(req.query.month, 10) || new Date().getMonth() + 1;
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
 
+    const summaries = [];
+    for (const employee of employees) {
+      try {
+        const deductions = await Deduction.find({
+          employeeId: employee._id,
+          date: { $gte: startOfMonth, $lte: endOfMonth }
+        });
+        const totalDeductions = deductions.reduce((sum, d) => sum + d.amount, 0);
+        const netSalary = Math.max(0, employee.salary - totalDeductions);
+        summaries.push({
+          _id: employee._id,
+          name: employee.name,
+          baseSalary: employee.salary,
+          totalDeductions,
+          netSalary,
+        });
+      } catch (err) {
+        console.error(`Error processing employee ${employee._id}:`, err.message);
+      }
+    }
+    res.json({ summaries });
+  } catch (error) {
+    console.error("Error fetching salary summaries:", error.message, error.stack);
+    res.status(500).json({ message: "Server error while fetching salary summaries" });
+  }
+});
 // GET /api/employees - Fetch all employees
 router.get("/", async (req, res) => {
   try {
@@ -205,5 +238,7 @@ router.get(
     }
   }
 );
+
+// GET /api/employees/salary-summaries - Get salary summary for all employees
 
 module.exports = router;

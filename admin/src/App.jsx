@@ -4,7 +4,7 @@ import Navbar from "./Components/Navbar";
 import EmployeeSalaryDeduction from "./Components/EmployeeManagement/EmployeeSalaryDeduction";
 import AdminEmployeeManagement from "./Components/EmployeeManagement/AdminEmployeeManagement";
 import Employee from "./Components/Employee";
-
+import EmployeeSalaryTable from "./Components/EmployeeSalaryTable";
 // Layout with Navbar
 const Layout = () => (
   <div className="font-poppins min-h-screen bg-gray-100">
@@ -31,6 +31,9 @@ const App = () => {
         {
           path: "/deduction",
           element: <EmployeeSalaryDeduction />,
+        },{
+          path: "/salary-summary",
+          element: <EmployeeSalaryTable />,
         },
         
       ],
