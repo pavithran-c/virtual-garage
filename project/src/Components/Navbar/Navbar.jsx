@@ -32,6 +32,7 @@ const Navbar = () => {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [navigate, user]);
 
+  // Move "Profile" to the end and remove "Logout"
   const navLinks = [
     { to: "/home", text: "Home" },
     { to: "/services", text: "Services" },
@@ -39,14 +40,9 @@ const Navbar = () => {
     { to: "/live-track", text: "Live Track" },
     { to: "/ai-recommender", text: "AI Recommender" },
     { to: "/about", text: "About" },
-    { to: "/profile", text: "Profile" },
     { to: "/contact", text: "Contact" },
+    { to: "/profile", text: "Profile" }, // Profile moved to last
   ];
-
-  const handleLogout = () => {
-    logout();
-    navigate("/", { replace: true });
-  };
 
   return (
     <>
@@ -61,45 +57,42 @@ const Navbar = () => {
             <span className="text-2xl font-bold text-[#e1b382]">FRIENDS CAR CARE</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-4">
+          <nav className="hidden md:flex items-center gap-2">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`px-4 py-2 rounded-md transition-colors duration-200 ${
-                  location.pathname === link.to
-                    ? theme === "dark"
-                      ? "bg-[#2d545e]/80 text-[#e1b382]"
-                      : "bg-[#2d545e]/80 text-[#e1b382]"
+                className={`relative px-4 py-2 rounded-full transition-colors duration-200 flex items-center justify-center
+                  ${location.pathname === link.to
+                    ? "bg-[#e1b382] text-[#12343b] shadow-md ring-2 ring-[#e1b382]"
                     : theme === "dark"
                     ? "text-[#e1b382] hover:bg-[#2d545e]/60"
-                    : "text-[#e1b382] hover:bg-[#2d545e]/60"
-                }`}
+                    : "text-[#e1b382] hover:bg-[#2d545e]/60"}
+                `}
+                style={{ minWidth: 44, minHeight: 44 }}
               >
-                {link.text}
+                <span className="whitespace-nowrap">{link.text}</span>
               </Link>
             ))}
-            {user && (
-              <button
-                onClick={handleLogout}
-                className={`px-6 py-2 rounded-md transition-colors ${theme === "dark" ? "bg-[#2d545e]/80 text-[#e1b382] hover:bg-[#12343b]/80" : "bg-[#2d545e]/80 text-[#e1b382] hover:bg-[#0d2a32]/80"}`}
-              >
-                Logout
-              </button>
-            )}
             <button
               onClick={toggleTheme}
-              className={`p-2 rounded-full ${theme === "dark" ? "bg-[#e1b382] text-[#12343b]" : "bg-[#12343b] text-[#e1b382]"} hover:shadow-md transition-all duration-300`}
+              className={`p-2 rounded-full flex items-center justify-center transition-all duration-300 shadow-md
+                ${theme === "dark"
+                  ? "bg-[#e1b382] text-[#12343b] hover:bg-[#f3d9b1]"
+                  : "bg-[#12343b] text-[#e1b382] hover:bg-[#2d545e]"}
+                ring-2 ring-transparent focus:ring-[#e1b382]`}
               aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              style={{ width: 44, height: 44 }}
             >
               {theme === "dark" ? <FaSun size={20} /> : <FaMoon size={20} />}
             </button>
           </nav>
 
           <button
-            className="md:hidden p-2 text-[#e1b382]"
+            className="md:hidden p-2 rounded-full bg-[#e1b382] text-[#12343b] shadow-md flex items-center justify-center"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
+            style={{ width: 44, height: 44 }}
           >
             {isMobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
           </button>
@@ -121,34 +114,30 @@ const Navbar = () => {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`px-4 py-3 rounded-md transition-colors duration-200 ${
-                    location.pathname === link.to
-                      ? theme === "dark"
-                        ? "bg-[#2d545e]/80 text-[#e1b382]"
-                        : "bg-[#2d545e]/80 text-[#e1b382]"
+                  className={`flex items-center gap-2 px-4 py-3 rounded-full transition-colors duration-200 justify-center
+                    ${location.pathname === link.to
+                      ? "bg-[#e1b382] text-[#12343b] shadow-md ring-2 ring-[#e1b382]"
                       : theme === "dark"
                       ? "text-[#e1b382] hover:bg-[#2d545e]/60"
-                      : "text-[#e1b382] hover:bg-[#2d545e]/60"
-                  }`}
+                      : "text-[#e1b382] hover:bg-[#2d545e]/60"}
+                  `}
+                  style={{ minWidth: 44, minHeight: 44 }}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  {link.text}
+                  <span className="whitespace-nowrap">{link.text}</span>
                 </Link>
               ))}
-              {user && (
-                <button
-                  onClick={handleLogout}
-                  className={`mt-2 px-4 py-3 rounded-md transition-colors w-full text-left ${theme === "dark" ? "bg-[#2d545e]/80 text-[#e1b382] hover:bg-[#12343b]/80" : "bg-[#2d545e]/80 text-[#e1b382] hover:bg-[#0d2a32]/80"}`}
-                >
-                  Logout
-                </button>
-              )}
               <button
                 onClick={() => {
                   toggleTheme();
                   setIsMobileMenuOpen(false);
                 }}
-                className={`mt-2 px-4 py-3 rounded-md transition-colors w-full text-left ${theme === "dark" ? "bg-[#e1b382] text-[#12343b]" : "bg-[#12343b] text-[#e1b382]"} hover:shadow-md`}
+                className={`mt-2 px-4 py-3 rounded-full transition-colors w-full text-center flex items-center justify-center
+                  ${theme === "dark"
+                    ? "bg-[#e1b382] text-[#12343b] hover:bg-[#f3d9b1] shadow-md"
+                    : "bg-[#12343b] text-[#e1b382] hover:bg-[#2d545e] shadow-md"}
+                `}
+                style={{ minWidth: 44, minHeight: 44 }}
               >
                 {theme === "dark" ? "Light Mode" : "Dark Mode"}
               </button>

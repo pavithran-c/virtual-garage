@@ -403,7 +403,7 @@ const Dashboard = () => {
         transition={{ duration: 0.5 }}
       >
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          Welcome, {user?.username || "Guest"}!
+          Welcome, {user.user.username || "Guest"}!
         </h1>
         <p className="text-sm md:text-base mt-2 opacity-90">Your vehicle management hub awaits.</p>
       </motion.div>
