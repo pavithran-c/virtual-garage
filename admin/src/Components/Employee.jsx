@@ -26,7 +26,6 @@ import {
   Legend,
 } from "chart.js";
 import { saveAs } from "file-saver";
- // Assuming Poppins font is imported here
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -277,8 +276,8 @@ const Employee = () => {
       {
         label: "Appointments by Status",
         data: Object.values(statusCounts),
-        backgroundColor: ["#f59e0b", "#3b82f6", "#f97316", "#10b981"],
-        borderColor: ["#d97706", "#2563eb", "#ea580c", "#059669"],
+        backgroundColor: ["#f2d53c", "#7d3cff", "#c80e13", "#7d3cff"],
+        borderColor: ["#d4b932", "#6b21a8", "#a30b0f", "#6b21a8"],
         borderWidth: 1,
       },
     ],
@@ -287,121 +286,151 @@ const Employee = () => {
   const chartOptions = {
     responsive: true,
     plugins: {
-      legend: { position: "top" },
+      legend: { position: "top", labels: { font: { family: "Poppins", size: 14 } } },
       title: {
         display: true,
         text: "Appointment Status Distribution",
-        font: { family: "Poppins", size: 18 },
+        font: { family: "Poppins", size: 18, weight: "600" },
+        color: "#1f2937",
       },
     },
     scales: {
-      y: { beginAtZero: true, title: { display: true, text: "Count" } },
-      x: { title: { display: true, text: "Status" } },
+      y: {
+        beginAtZero: true,
+        title: { display: true, text: "Count", font: { family: "Poppins" } },
+        grid: { color: "#e5e7eb" },
+      },
+      x: {
+        title: { display: true, text: "Status", font: { family: "Poppins" } },
+        grid: { display: false },
+      },
     },
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-[#fceed1] font-poppins flex">
       {/* Sidebar */}
       <motion.div
-        className={`fixed inset-y-0 left-0 bg-teal-800 text-white w-64 p-6 transform ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#7d3cff] text-white p-6 shadow-2xl transform ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 md:static md:w-64 transition-transform duration-300 z-50 shadow-lg`}
+        } md:translate-x-0 md:static md:flex md:flex-col md:min-h-screen transition-transform duration-300 backdrop-blur-md bg-opacity-95`}
         initial={{ x: "-100%" }}
         animate={{ x: isSidebarOpen ? 0 : "-100%" }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
       >
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-xl font-bold">Employee Dashboard</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Employee Dashboard</h2>
           <button className="md:hidden" onClick={() => setIsSidebarOpen(false)}>
-            <FaTimes />
+            <FaTimes className="text-xl" />
           </button>
         </div>
-        <nav className="space-y-4">
-          <button className="flex items-center w-full text-left p-2 rounded-lg bg-teal-700">
-            <FaCalendarAlt className="mr-2" /> My Tasks
+        <nav className="flex-1 space-y-3">
+          <button className="flex items-center w-full p-3 text-left rounded-xl bg-[#f2d53c] bg-opacity-20 hover:bg-opacity-30 transition">
+            <FaCalendarAlt className="mr-3 text-[#f2d53c]" /> My Tasks
           </button>
           <button
-            className="flex items-center w-full text-left p-2 rounded-lg hover:bg-teal-700"
+            className="flex items-center w-full p-3 text-left rounded-xl hover:bg-[#f2d53c] hover:bg-opacity-20 transition"
             onClick={() => setIsAnalyticsOpen(!isAnalyticsOpen)}
           >
-            <FaChartPie className="mr-2" /> Analytics
+            <FaChartPie className="mr-3 text-[#f2d53c]" /> Analytics
           </button>
         </nav>
       </motion.div>
 
       {/* Main Content */}
-      <div className="flex-1 p-4 md:p-8">
+      <div className="flex-1 p-6 md:p-10">
         <button
-          className="md:hidden mb-4 p-2 bg-teal-600 text-white rounded-lg"
+          className="md:hidden mb-6 p-3 bg-[#7d3cff] text-white rounded-full shadow-lg hover:bg-[#7d3cff]/80 transition"
           onClick={() => setIsSidebarOpen(true)}
         >
-          <FaBars />
+          <FaBars className="text-xl" />
         </button>
 
         <motion.div
-          className="max-w-7xl mx-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          className="max-w-7xl mx-auto space-y-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-teal-800">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#7d3cff] tracking-tight">
               Employee Task Dashboard
             </h1>
-            <span className="text-gray-600">{filteredAppointments.length} tasks</span>
+            <span className="text-gray-600 font-medium">
+              {filteredAppointments.length} Tasks
+            </span>
           </div>
 
           {error && (
             <motion.div
-              className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg shadow-md"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              className="p-4 bg-[#c80e13]/10 text-[#c80e13] rounded-xl shadow-md"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
               {error}
             </motion.div>
           )}
 
-          {/* Search and Filters */}
+          {/* Quick Stats */}
           <motion.div
-            className="mb-6 flex flex-col sm:flex-row gap-4"
+            className="grid grid-cols-2 md:grid-cols-4 gap-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <div className="relative flex-1">
-              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            {Object.entries(statusCounts).map(([status, count]) => (
+              <div
+                key={status}
+                className="bg-white p-4 rounded-xl shadow-md backdrop-blur-md bg-opacity-80"
+              >
+                <h3 className="text-sm font-medium text-gray-600">{status}</h3>
+                <p className="text-2xl font-bold text-[#7d3cff]">{count}</p>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Search and Filters */}
+          <motion.div
+            className="flex flex-col sm:flex-row gap-4 items-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
+            <div className="relative flex-1 max-w-lg">
+              <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by user, vehicle, or service..."
-                className="w-full pl-10 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full pl-12 p-3 border border-gray-200 rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#7d3cff] transition"
               />
             </div>
-            <button
+            <motion.button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="flex items-center bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition"
+              className="flex items-center justify-center bg-[#7d3cff] text-white px-6 py-3 rounded-xl hover:bg-[#7d3cff]/90 shadow-md transition"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <FaFilter className="mr-2" /> Filters
-            </button>
+              <FaFilter className="mr-2" /> {isFilterOpen ? "Hide Filters" : "Show Filters"}
+            </motion.button>
           </motion.div>
 
           <AnimatePresence>
             {isFilterOpen && (
               <motion.div
-                className="mb-6 p-4 bg-white rounded-lg shadow-md"
+                className="p-6 bg-white rounded-xl shadow-md backdrop-blur-md bg-opacity-80"
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="p-3 border border-gray-200 rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#7d3cff] transition"
                   >
                     <option value="All">All Statuses</option>
                     <option value="Pending">Pending</option>
@@ -413,7 +442,7 @@ const Employee = () => {
                     type="date"
                     value={filterDate}
                     onChange={(e) => setFilterDate(e.target.value)}
-                    className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="p-3 border border-gray-200 rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#7d3cff] transition"
                   />
                 </div>
               </motion.div>
@@ -422,161 +451,200 @@ const Employee = () => {
 
           {/* Appointments Table */}
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-600"></div>
+            <div className="flex items-center justify-center py-16">
+              <motion.div
+                className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#7d3cff]"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              ></motion.div>
             </div>
           ) : currentAppointments.length === 0 ? (
-            <p className="text-gray-500 text-center py-12">No tasks match your criteria.</p>
+            <p className="text-gray-500 text-center py-16 text-lg">
+              No tasks match your criteria.
+            </p>
           ) : (
             <motion.div
-              className="bg-white rounded-lg shadow-md overflow-x-auto"
+              className="bg-white rounded-xl shadow-md overflow-x-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
             >
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-teal-100 text-teal-800 text-left text-sm">
-                    <th className="p-4">User</th>
-                    <th className="p-4">Service</th>
-                    <th className="p-4">Date</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentAppointments.map((appt) => (
-                    <motion.tr
-                      key={appt.id}
-                      className="border-b hover:bg-gray-50 transition"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <td className="p-4 truncate max-w-[150px]" title={appt.name}>
-                        {appt.name}
-                      </td>
-                      <td className="p-4 truncate max-w-[200px]" title={appt.service}>
-                        {appt.service}
-                      </td>
-                      <td className="p-4">{appt.date}</td>
-                      <td className="p-4">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            appt.status === "Pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : appt.status === "Accepted"
-                              ? "bg-blue-100 text-blue-800"
-                              : appt.status === "In Progress"
-                              ? "bg-orange-100 text-orange-800"
-                              : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          {appt.status}
-                        </span>
-                        {appt.changeRequested && (
-                          <span className="ml-2 bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">
-                            {appt.changeReason}
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto">
+                  <thead className="sticky top-0 bg-[#7d3cff]/10">
+                    <tr className="text-[#7d3cff] text-left text-sm font-semibold">
+                      <th className="p-4 min-w-[150px]">User</th>
+                      <th className="p-4 min-w-[200px]">Service</th>
+                      <th className="p-4 min-w-[120px]">Date</th>
+                      <th className="p-4 min-w-[120px]">Status</th>
+                      <th className="p-4 min-w-[300px]">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentAppointments.map((appt) => (
+                      <motion.tr
+                        key={appt.id}
+                        className="border-b hover:bg-gray-50 transition"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <td className="p-4 truncate" title={appt.name}>
+                          {appt.name}
+                        </td>
+                        <td className="p-4 truncate" title={appt.service}>
+                          {appt.service}
+                        </td>
+                        <td className="p-4">{appt.date}</td>
+                        <td className="p-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              appt.status === "Pending"
+                                ? "bg-[#f2d53c]/20 text-[#f2d53c]"
+                                : appt.status === "Accepted"
+                                ? "bg-[#7d3cff]/20 text-[#7d3cff]"
+                                : appt.status === "In Progress"
+                                ? "bg-[#c80e13]/20 text-[#c80e13]"
+                                : "bg-green-600/20 text-green-600"
+                            }`}
+                          >
+                            {appt.status}
                           </span>
-                        )}
-                      </td>
-                      <td className="p-4 flex gap-2 flex-wrap">
-                        <button
-                          onClick={() => setSelectedAppointment(appt)}
-                          className="p-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition"
-                          title="View Details"
-                        >
-                          <FaEye />
-                        </button>
-                        {appt.status === "Pending" && !appt.changeRequested && (
-                          <div className="flex gap-2 items-center">
-                            <select
-                              id={`reason-${appt.id}`}
-                              defaultValue=""
-                              className="p-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          {appt.changeRequested && (
+                            <span className="ml-2 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-medium">
+                              {appt.changeReason}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4 flex gap-3 flex-wrap items-center">
+                          <motion.div className="relative group">
+                            <motion.button
+                              onClick={() => setSelectedAppointment(appt)}
+                              className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition"
+                              title="View Details"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.95 }}
                             >
-                              <option value="" disabled>
-                                Select Reason
-                              </option>
-                              {reasons.map((reason) => (
-                                <option key={reason} value={reason}>
-                                  {reason}
+                              <FaEye />
+                            </motion.button>
+                            <span className="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2">
+                              View Details
+                            </span>
+                          </motion.div>
+                          {appt.status === "Pending" && !appt.changeRequested && (
+                            <div className="flex gap-2 items-center">
+                              <select
+                                id={`reason-${appt.id}`}
+                                defaultValue=""
+                                className="p-2 border border-gray-200 rounded-xl text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f2d53c] transition"
+                              >
+                                <option value="" disabled>
+                                  Select Reason
                                 </option>
-                              ))}
-                            </select>
-                            <button
-                              onClick={() =>
-                                handleRequestDateChange(
-                                  appt.id,
-                                  document.getElementById(`reason-${appt.id}`).value
-                                )
-                              }
-                              className="px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm"
-                            >
-                              Request Change
-                            </button>
-                          </div>
-                        )}
-                        {appt.status === "Pending" && (
-                          <button
-                            onClick={() => handleAccept(appt.id)}
-                            className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
-                            title="Accept Task"
-                          >
-                            <FaCheckCircle className="inline mr-1" /> Accept
-                          </button>
-                        )}
-                        {appt.status === "Accepted" && (
-                          <button
-                            onClick={() => handleInProgress(appt.id)}
-                            className="px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm"
-                            title="Start Task"
-                          >
-                            <FaHourglassHalf className="inline mr-1" /> Start
-                          </button>
-                        )}
-                        {appt.status === "In Progress" && (
-                          <button
-                            onClick={() => handleComplete(appt.id)}
-                            className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
-                            title="Complete Task"
-                          >
-                            <FaCheck className="inline mr-1" /> Complete
-                          </button>
-                        )}
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
+                                {reasons.map((reason) => (
+                                  <option key={reason} value={reason}>
+                                    {reason}
+                                  </option>
+                                ))}
+                              </select>
+                              <motion.button
+                                onClick={() =>
+                                  handleRequestDateChange(
+                                    appt.id,
+                                    document.getElementById(`reason-${appt.id}`).value
+                                  )
+                                }
+                                className="px-4 py-2 bg-[#f2d53c] text-white rounded-xl hover:bg-[#f2d53c]/80 transition text-sm shadow-sm"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                Request Change
+                              </motion.button>
+                            </div>
+                          )}
+                          {appt.status === "Pending" && (
+                            <motion.div className="relative group">
+                              <motion.button
+                                onClick={() => handleAccept(appt.id)}
+                                className="px-4 py-2 bg-[#7d3cff] text-white rounded-xl hover:bg-[#7d3cff]/80 transition text-sm shadow-sm"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <FaCheckCircle className="inline mr-1" /> Accept
+                              </motion.button>
+                              <span className="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2">
+                                Accept Task
+                              </span>
+                            </motion.div>
+                          )}
+                          {appt.status === "Accepted" && (
+                            <motion.div className="relative group">
+                              <motion.button
+                                onClick={() => handleInProgress(appt.id)}
+                                className="px-4 py-2 bg-[#c80e13] text-white rounded-xl hover:bg-[#c80e13]/80 transition text-sm shadow-sm"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <FaHourglassHalf className="inline mr-1" /> Start
+                              </motion.button>
+                              <span className="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2">
+                                Start Task
+                              </span>
+                            </motion.div>
+                          )}
+                          {appt.status === "In Progress" && (
+                            <motion.div className="relative group">
+                              <motion.button
+                                onClick={() => handleComplete(appt.id)}
+                                className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-600/80 transition text-sm shadow-sm"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <FaCheck className="inline mr-1" /> Complete
+                              </motion.button>
+                              <span className="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2">
+                                Complete Task
+                              </span>
+                            </motion.div>
+                          )}
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </motion.div>
           )}
 
           {/* Pagination */}
           {totalPages > 1 && (
             <motion.div
-              className="flex justify-between items-center mt-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              className="flex justify-between items-center mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <button
+              <motion.button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg disabled:opacity-50 hover:bg-teal-700 transition"
+                className="flex items-center px-6 py-3 bg-[#7d3cff] text-white rounded-xl disabled:opacity-50 hover:bg-[#7d3cff]/80 transition shadow-md"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <FaArrowLeft className="mr-2" /> Previous
-              </button>
-              <span className="text-gray-700">
+              </motion.button>
+              <span className="text-gray-700 font-medium">
                 Page {currentPage} of {totalPages}
               </span>
-              <button
+              <motion.button
                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="flex items-center px-4 py-2 bg-teal-600 text-white rounded-lg disabled:opacity-50 hover:bg-teal-700 transition"
+                className="flex items-center px-6 py-3 bg-[#7d3cff] text-white rounded-xl disabled:opacity-50 hover:bg-[#7d3cff]/80 transition shadow-md"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 Next <FaArrowRight className="ml-2" />
-              </button>
+              </motion.button>
             </motion.div>
           )}
 
@@ -587,21 +655,23 @@ const Employee = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
           >
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl md:text-2xl font-semibold text-teal-800">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl md:text-3xl font-semibold text-[#7d3cff]">
                 Task Analytics
               </h2>
-              <button
+              <motion.button
                 onClick={() => setIsAnalyticsOpen(!isAnalyticsOpen)}
-                className="text-teal-600 hover:text-teal-800 transition"
+                className="text-[#7d3cff] hover:text-[#7d3cff]/80 transition font-medium"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                {isAnalyticsOpen ? "Hide" : "Show"}
-              </button>
+                {isAnalyticsOpen ? "Hide Analytics" : "Show Analytics"}
+              </motion.button>
             </div>
             <AnimatePresence>
               {isAnalyticsOpen && (
                 <motion.div
-                  className="bg-white p-6 rounded-lg shadow-md"
+                  className="bg-white p-6 rounded-xl shadow-md backdrop-blur-md bg-opacity-80"
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
@@ -615,82 +685,89 @@ const Employee = () => {
 
           {/* Export Button */}
           <motion.div
-            className="mt-6 text-right"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            className="mt-8 text-right"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <button
+            <motion.button
               onClick={exportToCSV}
-              className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+              className="flex items-center px-6 py-3 bg-[#f2d53c] text-white rounded-xl hover:bg-[#f2d53c]/80 transition shadow-md"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               <FaDownload className="mr-2" /> Export Tasks to CSV
-            </button>
+            </motion.button>
           </motion.div>
 
           {/* Appointment Details Modal */}
           <AnimatePresence>
             {selectedAppointment && (
               <motion.div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
                 onClick={() => setSelectedAppointment(null)}
               >
                 <motion.div
-                  className="bg-white p-6 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto"
+                  className="bg-white p-8 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl backdrop-blur-md bg-opacity-95"
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
                   transition={{ duration: 0.3 }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-semibold text-teal-800">Task Details</h3>
-                    <button
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-2xl font-semibold text-[#7d3cff]">Task Details</h3>
+                    <motion.button
                       onClick={() => setSelectedAppointment(null)}
                       className="text-gray-600 hover:text-gray-800"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
                     >
-                      <FaTimes />
-                    </button>
+                      <FaTimes className="text-xl" />
+                    </motion.button>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-4 text-gray-700">
                     <p>
-                      <strong>User:</strong> {selectedAppointment.name}
+                      <strong className="text-[#7d3cff]">User:</strong> {selectedAppointment.name}
                     </p>
                     <p>
-                      <strong>Service:</strong> {selectedAppointment.service}
+                      <strong className="text-[#7d3cff]">Service:</strong> {selectedAppointment.service}
                     </p>
                     <p>
-                      <strong>Date:</strong> {selectedAppointment.date}
+                      <strong className="text-[#7d3cff]">Date:</strong> {selectedAppointment.date}
                     </p>
                     <p>
-                      <strong>Status:</strong>{" "}
+                      <strong className="text-[#7d3cff]">Status:</strong>{" "}
                       <span
-                        className={`px-2 py-1 rounded-full text-xs ${
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
                           selectedAppointment.status === "Pending"
-                            ? "bg-yellow-100 text-yellow-800"
+                            ? "bg-[#f2d53c]/20 text-[#f2d53c]"
                             : selectedAppointment.status === "Accepted"
-                            ? "bg-blue-100 text-blue-800"
+                            ? "bg-[#7d3cff]/20 text-[#7d3cff]"
                             : selectedAppointment.status === "In Progress"
-                            ? "bg-orange-100 text-orange-800"
-                            : "bg-green-100 text-green-800"
+                            ? "bg-[#c80e13]/20 text-[#c80e13]"
+                            : "bg-green-600/20 text-green-600"
                         }`}
                       >
                         {selectedAppointment.status}
                       </span>
                     </p>
                     <p>
-                      <strong>Vehicle Number:</strong> {selectedAppointment.vehicleNumber}
+                      <strong className="text-[#7d3cff]">Vehicle Number:</strong>{" "}
+                      {selectedAppointment.vehicleNumber}
                     </p>
                     <p>
-                      <strong>Phone:</strong> {selectedAppointment.phone || "N/A"}
+                      <strong className="text-[#7d3cff]">Phone:</strong>{" "}
+                      {selectedAppointment.phone || "N/A"}
                     </p>
                     {selectedAppointment.changeRequested && (
                       <p>
-                        <strong>Change Reason:</strong>{" "}
-                        <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs">
+                        <strong className="text-[#7d3cff]">Change Reason:</strong>{" "}
+                        <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-medium">
                           {selectedAppointment.changeReason}
                         </span>
                       </p>
@@ -705,12 +782,12 @@ const Employee = () => {
           <AnimatePresence>
             {toast && (
               <motion.div
-                className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg text-white ${
-                  toast.type === "success" ? "bg-emerald-600" : "bg-red-600"
-                }`}
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 50 }}
+                className={`fixed bottom-6 right-6 p-4 rounded-xl shadow-lg text-white ${
+                  toast.type === "success" ? "bg-green-600" : "bg-[#c80e13]"
+                } max-w-sm cursor-pointer`}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 50 }}
                 transition={{ duration: 0.3 }}
                 onClick={() => setToast(null)}
               >
