@@ -151,7 +151,7 @@ const Employee = () => {
     }
   };
 
-  const handleComplete = async (id) => {
+  const handleComplete = async (id, amount) => {
     try {
       const response = await fetch(`${EMPLOYEE_API_URL}/complete/${id}`, {
         method: "PATCH",
@@ -159,6 +159,7 @@ const Employee = () => {
           "Content-Type": "application/json",
           Authorization: "Basic " + btoa("admin:admin123"),
         },
+        body: JSON.stringify({ amount }), // send amount
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -593,12 +594,28 @@ const Employee = () => {
                             </motion.div>
                           )}
                           {appt.status === "In Progress" && (
-                            <motion.div className="relative group">
+                            <motion.div className="relative group flex items-center gap-2">
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="Enter Amount"
+                                className="px-3 py-2 border border-gray-300 rounded-xl text-sm w-32"
+                                value={appt.enteredAmount || ""}
+                                onChange={e => {
+                                  const value = e.target.value;
+                                  setAppointments(appointments =>
+                                    appointments.map(a =>
+                                      a.id === appt.id ? { ...a, enteredAmount: value } : a
+                                    )
+                                  );
+                                }}
+                              />
                               <motion.button
-                                onClick={() => handleComplete(appt.id)}
+                                onClick={() => handleComplete(appt.id, appt.enteredAmount)}
                                 className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-600/80 transition text-sm shadow-sm"
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
+                                disabled={!appt.enteredAmount}
                               >
                                 <FaCheck className="inline mr-1" /> Complete
                               </motion.button>

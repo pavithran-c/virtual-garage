@@ -3,7 +3,7 @@ import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import Navbar from "./Components/Navbar";
 import EmployeeSalaryDeduction from "./Components/EmployeeManagement/EmployeeSalaryDeduction";
 import AdminEmployeeManagement from "./Components/EmployeeManagement/AdminEmployeeManagement";
-import Employee from "./Components/Employee";
+import Employee from "./Components/Appointmentstatus";
 import EmployeeSalaryTable from "./Components/EmployeeSalaryTable";
 // Layout with Navbar
 const Layout = () => (

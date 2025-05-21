@@ -139,6 +139,8 @@ router.patch("/in-progress/:id", authAdmin, async (req, res) => {
 // PATCH complete an appointment (set status to "Completed" from "In Progress")
 router.patch("/complete/:id", authAdmin, async (req, res) => {
   try {
+    const { amount } = req.body; // Admin enters amount
+
     const appointment = await Appointment.findById(req.params.id);
     if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
@@ -149,6 +151,9 @@ router.patch("/complete/:id", authAdmin, async (req, res) => {
     }
 
     appointment.status = "Completed";
+    if (amount !== undefined) {
+      appointment.amount = amount; // Save the entered amount
+    }
     const updatedAppointment = await appointment.save();
 
     // Format phone number with +91 if needed
@@ -157,11 +162,11 @@ router.patch("/complete/:id", authAdmin, async (req, res) => {
       phone = '+91' + phone;
     }
 
-    // Send SMS notification
+    // Send SMS notification with amount
     if (phone) {
       try {
         await twilioClient.messages.create({
-          body: `Hi ${appointment.username || "User"}, your appointment is now completed. Thank you!`,
+          body: `Hi ${appointment.username || "User"}, your appointment is now completed. Amount: ₹${amount}. Thank you!`,
           from: TWILIO_PHONE,
           to: phone
         });
@@ -181,6 +186,7 @@ router.patch("/complete/:id", authAdmin, async (req, res) => {
       phone: updatedAppointment.phone,
       serviceOption: updatedAppointment.serviceOption,
       status: updatedAppointment.status,
+      amount: updatedAppointment.amount, // Include in response
       changeRequested: updatedAppointment.changeRequested || false,
       changeReason: updatedAppointment.changeReason || null,
       createdAt: updatedAppointment.createdAt,
