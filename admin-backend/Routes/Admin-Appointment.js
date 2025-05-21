@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const Appointment = require("../Models/Appointment");
 const User = require("../Models/User");
+const twilio = require('twilio');
+const twilioClient = twilio('ACd2dbb8df133fb3cfe38ace701882f96a', '4e6a9643f36d701a0a5039b50354f9f2');
+const TWILIO_PHONE = '+17542875576';
 // Middleware to check admin authentication (assuming Basic Auth as per frontend)
 const authAdmin = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -54,6 +57,25 @@ router.patch("/accept/:id", authAdmin, async (req, res) => {
 
     appointment.status = "Accepted";
     const updatedAppointment = await appointment.save();
+
+    // Format phone number with +91 if needed
+    let phone = appointment.phone;
+    if (phone && !phone.startsWith('+')) {
+      phone = '+91' + phone;
+    }
+
+    // Send SMS notification
+    if (phone) {
+      try {
+        await twilioClient.messages.create({
+          body: `Hi ${appointment.user.username || "User"}, your appointment has been accepted and work will start soon.`,
+          from: TWILIO_PHONE,
+          to: phone
+        });
+      } catch (smsErr) {
+        console.error("SMS sending failed:", smsErr.message);
+      }
+    }
 
     res.json({
       _id: updatedAppointment._id.toString(),
@@ -128,6 +150,25 @@ router.patch("/complete/:id", authAdmin, async (req, res) => {
 
     appointment.status = "Completed";
     const updatedAppointment = await appointment.save();
+
+    // Format phone number with +91 if needed
+    let phone = appointment.phone;
+    if (phone && !phone.startsWith('+')) {
+      phone = '+91' + phone;
+    }
+
+    // Send SMS notification
+    if (phone) {
+      try {
+        await twilioClient.messages.create({
+          body: `Hi ${appointment.username || "User"}, your appointment is now completed. Thank you!`,
+          from: TWILIO_PHONE,
+          to: phone
+        });
+      } catch (smsErr) {
+        console.error("SMS sending failed:", smsErr.message);
+      }
+    }
 
     res.json({
       _id: updatedAppointment._id.toString(),

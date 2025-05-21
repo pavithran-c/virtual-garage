@@ -32,17 +32,17 @@ router.post("/", auth, async (req, res) => {
       return res.status(400).json({ message: "Vehicle not found or does not belong to you" });
     }
 
-    const existingAppointment = await Appointment.findOne({
+    // Check for active appointment (Accepted or In Progress) for this vehicle
+    const activeAppointment = await Appointment.findOne({
       number,
-      date,
-      time,
       user: req.user.id,
-      status: { $ne: "Completed" },
+      status: { $in: ["Accepted", "In Progress"] },
     });
-    if (existingAppointment) {
-      return res.status(400).json({ message: "An active appointment already exists for this vehicle at this time" });
+    if (activeAppointment) {
+      return res.status(400).json({ message: "You cannot book a new appointment for this vehicle until the previous service is completed." });
     }
 
+    // Allow booking if no active appointment or last is Completed
     const appointmentsOnDate = await Appointment.countDocuments({ date, status: { $ne: "Completed" } });
     if (appointmentsOnDate >= MAX_APPOINTMENTS_PER_DAY) {
       return res.status(400).json({ message: "Maximum appointments reached for this date" });
