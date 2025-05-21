@@ -88,7 +88,7 @@ const Footer = () => {
               Luxury Car Maintenance and Repair Services at Your Convenience.
             </p>
             <div className="flex flex-col gap-1 text-sm">
-              <a href="tel:+1234567890" className="hover:text-[#2d545e] transition-colors duration-300 font-semibold">+1 (234) 567-890</a>
+              <a href="tel:+91 9842734744" className="hover:text-[#2d545e] transition-colors duration-300 font-semibold">+91 9842734744 </a>
               <a href="mailto:info@friendscarcare.com" className="hover:text-[#2d545e] transition-colors duration-300 font-semibold">info@friendscarcare.com</a>
             </div>
           </motion.div>

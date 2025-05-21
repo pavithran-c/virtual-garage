@@ -19,3 +19,7 @@
 2025-03-28T05:53:27.659Z | Query: "Engine won’t turn over" | Predicted: "Battery Replacement" | Confidence: 0.1397
 2025-03-28T06:28:35.730Z | Query: "battery" | Predicted: "Battery Replacement" | Confidence: 0.1689
 2025-04-12T08:44:53.920Z | Query: "book a service" | Predicted: "How to Book a Service" | Confidence: 0.2286
+2025-05-17T05:58:18.101Z | Query: "engine won't turn on" | Predicted: "Battery Replacement" | Confidence: 0.1397
+2025-05-17T05:58:38.581Z | Query: "Book a service" | Predicted: "How to Book a Service" | Confidence: 0.2286
+2025-05-17T05:58:43.980Z | Query: "Book a service" | Predicted: "How to Book a Service" | Confidence: 0.2286
+2025-05-17T05:59:38.768Z | Query: "Battery drains overnight" | Predicted: "Battery Replacement" | Confidence: 0.1829
