@@ -12,7 +12,7 @@ export default function AnalyticsDashboard() {
     // Fetch initial analytics
     const fetchInitialAnalytics = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/analytics");
+        const response = await fetch("https://friends-car-care.onrender.com/apianalytics");
         if (!response.ok) throw new Error("Failed to fetch analytics");
         const data = await response.json();
         setAnalytics(data);

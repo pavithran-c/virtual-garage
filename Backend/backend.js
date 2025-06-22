@@ -10,7 +10,7 @@ const appointmentRoutes = require('./routes/appointments');
 const aiRoutes = require('./routes/AIroutes'); // Import AI routes
 const user=require('./routes/user');
 const app = express();
-
+app.set('trust proxy', 1);
 // Middleware
 const FRONTEND_URL ='https://friends-car-care.vercel.app';
 app.use(cors({

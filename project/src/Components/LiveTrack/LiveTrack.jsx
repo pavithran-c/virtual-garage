@@ -23,7 +23,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL =  "https://friends-car-care.onrender.com/api";
 
 const LiveTrack = () => {
   const { user } = useContext(AuthContext);

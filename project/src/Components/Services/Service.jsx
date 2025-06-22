@@ -13,7 +13,7 @@ import { ThemeContext } from "../../Components/ThemeContext";
 import axios from "axios";
 import { Howl } from "howler";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = "https://friends-car-care.onrender.com/api";
 
 const clickSound = new Howl({
   src: ["/sounds/click.mp3"],

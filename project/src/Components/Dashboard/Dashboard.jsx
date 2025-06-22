@@ -32,7 +32,7 @@ import "./Dashboard.css"; // Assuming this is where your Poppins font CSS lives
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = "https://friends-car-care.onrender.com/api";
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
