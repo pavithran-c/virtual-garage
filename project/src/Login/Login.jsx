@@ -7,7 +7,7 @@ import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import "./Login.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_URL = "https://friends-car-care.onrender.com/api";
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const LoginSignup = () => {
