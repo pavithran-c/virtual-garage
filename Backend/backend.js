@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const authRoutes = require('./routes/authRoutes');
 const vehicleRoutes = require('./routes/vehicleroutes');
 const appointmentRoutes = require('./routes/appointments');
-const aiRoutes = require('./routes/aiRoutes'); // Import AI routes
+const aiRoutes = require('./routes/AIroutes'); // Import AI routes
 const user=require('./routes/user');
 const app = express();
 
