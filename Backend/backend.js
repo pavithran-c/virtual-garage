@@ -12,7 +12,7 @@ const user=require('./routes/user');
 const app = express();
 app.set('trust proxy', 1);
 // Middleware
-const FRONTEND_URL ='https://friends-car-care.vercel.app';
+const FRONTEND_URL =['http://localhost:5173','https://friends-car-care.vercel.app'];
 app.use(cors({
   origin: FRONTEND_URL,
   credentials: true,
